@@ -5,7 +5,7 @@ highlighter:      rouge
 # Setup
 title:            Nick's things
 tagline:          'also stuff'
-description:      Ongoing episodes of Nick Explains AWS are available on <a href="https://www.tiktok.com/@nickexplainsaws/">Tiktok</a> and <a href="https://www.youtube.com/@nickexplainsaws">YouTube</a>
+description:      I am a proud AWS Community Builder! Ongoing episodes of Nick Explains AWS are available on <a href="https://www.tiktok.com/@nickexplainsaws/">Tiktok</a> and <a href="https://www.youtube.com/@nickexplainsaws">YouTube</a>
 url:              https://nickt.com.au
 baseurl:          '/hydeout'
                   # the optional subpath of your site, e.g. "/blog"
