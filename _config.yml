@@ -7,9 +7,9 @@ permalink:        pretty
 relative_permalinks: true
 
 # Setup
-title:            NickT's things
-tagline:          'Nick\'s stuff'
-description:      'A collection of things I\'ve created.'
+title:            Nick\'s things
+tagline:          "Nicks stuff"
+description:      "A collection of things Ive created.
 url:              http://nickt.com.au
 baseurl:          /
 
