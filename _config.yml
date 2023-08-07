@@ -8,8 +8,8 @@ relative_permalinks: true
 
 # Setup
 title:            NickT's things
-tagline:          'Nick's stuff'
-description:      'A collection of things I've created.'
+tagline:          'Nick\'s stuff'
+description:      'A collection of things I\'ve created.'
 url:              http://nickt.com.au
 baseurl:          /
 
