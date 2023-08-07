@@ -6,7 +6,7 @@ highlighter:      rouge
 title:            Nick's things
 tagline:          'also stuff'
 description:      A list of things I've built. mostly <a href="http://aws.amazon.com">AWS</a> related.
-url:              https://fongandrew.github.io
+url:              https://nickt.com.au
 baseurl:          '/hydeout'
                   # the optional subpath of your site, e.g. "/blog"
                   # NB: This applies to all pages in your Jekyll site.
@@ -15,8 +15,8 @@ baseurl:          '/hydeout'
                   # sidebar_blog_link below.
 
 author:
-  name:           'Andrew Fong'
-  url:            https://twitter.com/fongandrewc
+  name:           'Nick Triantafillou'
+  url:            https://twitter.com/xelfer
 
 paginate:         5
 # paginate_path:    '/page:num'
