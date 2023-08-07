@@ -5,7 +5,7 @@ highlighter:      rouge
 # Setup
 title:            Nick's things
 tagline:          'also stuff'
-description:      A list of things I've built. mostly <a href="http://aws.amazon.com">AWS</a> related.
+description:      A list of things I've built. Mostly <a href="http://aws.amazon.com">AWS</a> related.
 url:              https://nickt.com.au
 baseurl:          '/hydeout'
                   # the optional subpath of your site, e.g. "/blog"
