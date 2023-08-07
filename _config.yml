@@ -4,7 +4,7 @@ highlighter:      rouge
 
 # Setup
 title:            Nick's things
-tagline:          '''
+tagline:          ''
 description:      'A list of the things I've created, worked on, or written.'
 url:              https://nickt.com.au
 baseurl:          '/'
