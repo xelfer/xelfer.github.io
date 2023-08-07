@@ -18,7 +18,7 @@ author:
   name:           'Nick Triantafillou'
   url:            https://twitter.com/xelfer
 
-paginate:         5
+paginate:         20
 # paginate_path:    '/page:num'
                     # Or '/blog/page:num' if you want to move your index pages
 
