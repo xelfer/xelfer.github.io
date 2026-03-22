@@ -290,9 +290,15 @@
                 <canvas id="fitnessChart" height="120"></canvas>
             </div>
             <div style="display:flex; gap:1.5rem; margin-top:0.75rem; font-size:0.8rem; color:#8b949e; justify-content:center;">
-                <span><span style="color:#3fb950">&#9644;</span> Fitness (CTL)</span>
-                <span><span style="color:#f85149">&#9644;</span> Fatigue (ATL)</span>
-                <span><span style="color:#58a6ff">&#9644;</span> Form (TSB)</span>
+                <span><span style="color:#58a6ff">&#9644;</span> Fitness (CTL)</span>
+                <span><span style="color:#d2a8ff">&#9644;</span> Fatigue (ATL)</span>
+                <span><span style="color:#3fb950">&#9644;</span> Form (TSB)</span>
+            </div>
+            <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:0.75rem 1rem; margin-top:0.75rem; font-size:0.8rem; color:#8b949e; line-height:1.5;">
+                <strong style="color:#e1e4e8">How to read this:</strong>
+                To get fitter, keep <span style="color:#d2a8ff">fatigue</span> (purple) above <span style="color:#58a6ff">fitness</span> (blue) &mdash; that means you're creating training stress.
+                <span style="color:#3fb950">Form</span> (green fill) = fitness minus fatigue. Negative form = gaining fitness. Positive form = fresh and ready to race.
+                Include rest weeks to recover from fatigue and peak for goal events.
             </div>
         </div>
 
@@ -775,7 +781,7 @@
         </div>
 
         <div class="updated">
-            Last updated: March 22, 2026 at 21:37 AEST<br>
+            Last updated: March 22, 2026 at 21:42 AEST<br>
             Auto-generated from Garmin Connect &amp; intervals.icu
         </div>
     </div>
@@ -792,8 +798,8 @@
                     {
                         label: 'Fitness (CTL)',
                         data: fitnessData.map(d => d.ctl),
-                        borderColor: '#3fb950',
-                        backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                        borderColor: '#58a6ff',
+                        backgroundColor: 'rgba(88, 166, 255, 0.1)',
                         fill: false,
                         tension: 0.3,
                         pointRadius: 0,
@@ -802,8 +808,8 @@
                     {
                         label: 'Fatigue (ATL)',
                         data: fitnessData.map(d => d.atl),
-                        borderColor: '#f85149',
-                        backgroundColor: 'rgba(248, 81, 73, 0.1)',
+                        borderColor: '#d2a8ff',
+                        backgroundColor: 'rgba(210, 168, 255, 0.1)',
                         fill: false,
                         tension: 0.3,
                         pointRadius: 0,
@@ -812,8 +818,8 @@
                     {
                         label: 'Form (TSB)',
                         data: fitnessData.map(d => d.tsb),
-                        borderColor: '#58a6ff',
-                        backgroundColor: 'rgba(88, 166, 255, 0.05)',
+                        borderColor: '#3fb950',
+                        backgroundColor: 'rgba(63, 185, 80, 0.05)',
                         fill: true,
                         tension: 0.3,
                         pointRadius: 0,
