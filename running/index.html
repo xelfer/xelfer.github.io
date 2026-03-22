@@ -169,6 +169,56 @@
         .plan-day.rest .day-session { color: #484f58; }
         .plan-day.done { opacity: 0.6; }
         .plan-day.done .day-session { text-decoration: line-through; }
+        .plan-day.missed { }
+        .plan-day.missed .day-session { color: #f85149; text-decoration: line-through; }
+        .plan-day.today { background: rgba(136, 46, 224, 0.1); border-radius: 6px; padding-left: 0.5rem; }
+        .plan-day.race { background: rgba(46, 160, 67, 0.1); border-radius: 6px; padding-left: 0.5rem; }
+        .plan-day.race .day-session { color: #3fb950; font-weight: 700; }
+        .status-icon { margin-right: 0.5rem; font-size: 0.85rem; }
+        .plan-week.current { border-color: rgba(136, 46, 224, 0.5); }
+        .plan-week-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .plan-week-phase {
+            font-size: 0.8rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .phase-build { background: rgba(46, 160, 67, 0.2); color: #3fb950; }
+        .phase-peak { background: rgba(227, 179, 65, 0.2); color: #e3b341; }
+        .phase-taper { background: rgba(56, 132, 244, 0.2); color: #58a6ff; }
+        .phase-race { background: rgba(232, 71, 60, 0.2); color: #f85149; }
+        .race-strategy {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .race-strategy-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .race-strategy-row:last-child { border-bottom: none; }
+        .race-strategy-row .phase { color: #d2a8ff; font-weight: 600; min-width: 100px; }
+        .race-strategy-row .plan { color: #e1e4e8; }
+        .principles-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+        .principle {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        .principle .rule { color: #d2a8ff; font-weight: 600; font-size: 0.9rem; }
+        .principle .detail { color: #8b949e; font-size: 0.85rem; }
         .niggle-banner {
             background: rgba(227, 179, 65, 0.1);
             border: 1px solid rgba(227, 179, 65, 0.3);
@@ -230,6 +280,243 @@
                 <div class="label">Race Target</div>
                 <div class="value">2:05-2:10</div>
                 <div class="detail">Stretch: sub-2:00</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Training Plan</h2>
+            <div class="plan-week">
+                <div class="plan-week-header">
+                    <h3>Week 1: Mar 23-29</h3>
+                    <span class="plan-week-phase phase-build">Build</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Mon Mar 24</span>
+                    <span class="day-session">5km easy</span>
+                    <span class="day-target">7:00-7:30/km, HR <145</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Mar 25</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Wed Mar 26</span>
+                    <span class="day-session">6km easy</span>
+                    <span class="day-target">7:00-7:30/km, HR <145</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Mar 27</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Fri Mar 28</span>
+                    <span class="day-session">3km shakeout</span>
+                    <span class="day-target">7:00-7:30/km</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Mar 29</span>
+                    <span class="day-session">Parkrun (pacing practice)</span>
+                    <span class="day-target">Even splits ~6:10/km, NO hard start, monitor shin niggle</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sun Mar 30</span>
+                    <span class="day-session">10km long run</span>
+                    <span class="day-target">7:30-8:00/km, conversational</span>
+                </div>
+                <div style="text-align:right; color:#8b949e; font-size:0.8rem; margin-top:0.5rem">Weekly total: ~29km</div>
+            </div>
+            <div class="plan-week">
+                <div class="plan-week-header">
+                    <h3>Week 2: Mar 31 - Apr 6</h3>
+                    <span class="plan-week-phase phase-build">Build</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Mon Mar 31</span>
+                    <span class="day-session">5km easy</span>
+                    <span class="day-target">7:00-7:30/km</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Apr 1</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Wed Apr 2</span>
+                    <span class="day-session">7km easy</span>
+                    <span class="day-target">7:00-7:30/km</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Apr 3</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Fri Apr 4</span>
+                    <span class="day-session">3km shakeout</span>
+                    <span class="day-target">Easy</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Apr 5</span>
+                    <span class="day-session">Parkrun (pacing practice)</span>
+                    <span class="day-target">Even splits ~6:05/km, target ~30:30</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sun Apr 6</span>
+                    <span class="day-session">13km long run</span>
+                    <span class="day-target">7:30-8:00/km</span>
+                </div>
+                <div style="text-align:right; color:#8b949e; font-size:0.8rem; margin-top:0.5rem">Weekly total: ~33km</div>
+            </div>
+            <div class="plan-week">
+                <div class="plan-week-header">
+                    <h3>Week 3: Apr 7-13</h3>
+                    <span class="plan-week-phase phase-peak">Peak</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Mon Apr 7</span>
+                    <span class="day-session">5km easy</span>
+                    <span class="day-target">7:00-7:30/km</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Apr 8</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Wed Apr 9</span>
+                    <span class="day-session">8km w/ 3km at race pace</span>
+                    <span class="day-target">WU 2.5km, 3km @ 6:00-6:15/km, CD 2.5km</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Apr 10</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Fri Apr 11</span>
+                    <span class="day-session">3km shakeout</span>
+                    <span class="day-target">Easy</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Apr 12</span>
+                    <span class="day-session">Parkrun (pacing practice)</span>
+                    <span class="day-target">Controlled, even splits</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sun Apr 13</span>
+                    <span class="day-session">16km long run</span>
+                    <span class="day-target">7:30-8:00/km</span>
+                </div>
+                <div style="text-align:right; color:#8b949e; font-size:0.8rem; margin-top:0.5rem">Weekly total: ~37km (peak week)</div>
+            </div>
+            <div class="plan-week">
+                <div class="plan-week-header">
+                    <h3>Week 4: Apr 14-20</h3>
+                    <span class="plan-week-phase phase-taper">Taper</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Mon Apr 14</span>
+                    <span class="day-session">5km easy</span>
+                    <span class="day-target">7:00-7:30/km</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Apr 15</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Wed Apr 16</span>
+                    <span class="day-session">6km w/ 2km at race pace</span>
+                    <span class="day-target">6:00-6:15/km middle section</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Apr 17</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Fri Apr 18</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Apr 19</span>
+                    <span class="day-session">Parkrun (easy effort)</span>
+                    <span class="day-target">~27:00-28:00, save legs</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sun Apr 20</span>
+                    <span class="day-session">10km long run</span>
+                    <span class="day-target">7:30/km, comfortable</span>
+                </div>
+                <div style="text-align:right; color:#8b949e; font-size:0.8rem; margin-top:0.5rem">Weekly total: ~26km</div>
+            </div>
+            <div class="plan-week">
+                <div class="plan-week-header">
+                    <h3>Week 5: Apr 21-26</h3>
+                    <span class="plan-week-phase phase-race">Race Week</span>
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Mon Apr 21</span>
+                    <span class="day-session">4km easy</span>
+                    <span class="day-target">Shake legs out</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Apr 22</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Wed Apr 23</span>
+                    <span class="day-session">3km w/ 4x30sec strides</span>
+                    <span class="day-target">Keep legs sharp</span>
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Apr 24</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Fri Apr 25</span>
+                    <span class="day-session">Rest</span>
+                    
+                </div>
+                <div class="plan-day rest upcoming">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Apr 26</span>
+                    <span class="day-session">Rest or 2km jog</span>
+                    <span class="day-target">Legs up</span>
+                </div>
+                <div class="plan-day race">
+                    <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sun Apr 27</span>
+                    <span class="day-session">HALF MARATHON</span>
+                    <span class="day-target">Target: 2:05-2:10</span>
+                </div>
+                <div style="text-align:right; color:#8b949e; font-size:0.8rem; margin-top:0.5rem">Weekly total: ~28km (including race)</div>
+            </div>
+            <div class="race-strategy" style="margin-top:1rem">
+                <h3 style="color:#d2a8ff; margin-bottom:0.75rem">Race Day Strategy</h3>
+                <div class="race-strategy-row">
+                    <span class="phase">Start-5km</span>
+                    <span class="plan">6:00/km (30:00 split) - hold back, stay calm</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">5-15km</span>
+                    <span class="plan">5:45-5:50/km - ease into rhythm</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">15-21km</span>
+                    <span class="plan">5:30-5:40/km if feeling good - negative split</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">HR</span>
+                    <span class="plan">Stay under 160 until 15km, then let it go</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">Stitch prevention</span>
+                    <span class="plan">Conservative start, breathe rhythmically, don't surge</span>
+                </div>
             </div>
         </div>
 
@@ -475,7 +762,7 @@
         </div>
 
         <div class="updated">
-            Last updated: March 22, 2026 at 21:10 AEST<br>
+            Last updated: March 22, 2026 at 21:27 AEST<br>
             Auto-generated from Garmin Connect data
         </div>
     </div>
