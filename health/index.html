@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nick's Training Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #0f1117;
+            color: #e1e4e8;
+            line-height: 1.6;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1e2e 0%, #2d1b4e 100%);
+            padding: 2rem;
+            border-bottom: 2px solid #30363d;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+        .header .subtitle {
+            color: #8b949e;
+            font-size: 0.95rem;
+        }
+        .header .race-countdown {
+            display: inline-block;
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(136, 46, 224, 0.2);
+            border: 1px solid rgba(136, 46, 224, 0.4);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #d2a8ff;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        .stat-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .stat-card .detail {
+            font-size: 0.85rem;
+            color: #8b949e;
+            margin-top: 0.25rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+        }
+        .section h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #30363d;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            color: #8b949e;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #30363d;
+        }
+        td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid #21262d;
+        }
+        tr:hover {
+            background: rgba(136, 46, 224, 0.05);
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        .pace-easy { color: #27ae60; }
+        .pace-moderate { color: #f39c12; }
+        .pace-fast { color: #e74c3c; }
+        .hr-z2 { color: #27ae60; }
+        .hr-z3 { color: #f39c12; }
+        .hr-z4plus { color: #e74c3c; }
+        .week-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .week-bar .bar {
+            height: 24px;
+            background: linear-gradient(90deg, #238636, #2ea043);
+            border-radius: 4px;
+            min-width: 4px;
+            transition: width 0.3s ease;
+        }
+        .week-bar .week-label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            min-width: 80px;
+        }
+        .week-bar .week-dist {
+            font-size: 0.85rem;
+            color: #e1e4e8;
+            min-width: 60px;
+            text-align: right;
+        }
+        .plan-week {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .plan-week h3 {
+            color: #d2a8ff;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .plan-day {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .plan-day:last-child { border-bottom: none; }
+        .plan-day .day-name { color: #8b949e; min-width: 40px; }
+        .plan-day .day-session { color: #e1e4e8; flex: 1; margin-left: 1rem; }
+        .plan-day .day-target { color: #8b949e; font-size: 0.85rem; }
+        .plan-day.rest .day-session { color: #484f58; }
+        .plan-day.done { opacity: 0.6; }
+        .plan-day.done .day-session { text-decoration: line-through; }
+        .niggle-banner {
+            background: rgba(227, 179, 65, 0.1);
+            border: 1px solid rgba(227, 179, 65, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: #e3b341;
+        }
+        .niggle-banner strong { color: #f0d06e; }
+        .updated {
+            text-align: center;
+            color: #484f58;
+            font-size: 0.8rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #21262d;
+        }
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-card .value { font-size: 1.4rem; }
+            .header h1 { font-size: 1.4rem; }
+            table { font-size: 0.8rem; }
+            th, td { padding: 0.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Nick's Training Dashboard</h1>
+            <div class="subtitle">Half Marathon Prep &middot; Race Day: April 26, 2026</div>
+            <div class="race-countdown">34 days to race &middot; Week 2 of 5</div>
+        </div>
+    </div>
+    <div class="container">
+
+        <div class="niggle-banner">
+            <strong>Monitoring:</strong> Right lateral shin/ankle tightness &mdash; triggers at ~4km under hard effort. Testing if easy pace prevents it. No issues at rest.
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">This Week</div>
+                <div class="value">15.6km</div>
+                <div class="detail">3 runs</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">4-Week Avg</div>
+                <div class="value">10.2km</div>
+                <div class="detail">41km total / 8 runs</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Parkrun PB</div>
+                <div class="value">24:45</div>
+                <div class="detail">Feb 14 &middot; Setagaya, Japan</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Race Target</div>
+                <div class="value">2:05-2:10</div>
+                <div class="detail">Stretch: sub-2:00</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Weekly Volume</h2>
+            <div class="week-bar">
+                <span class="week-label">Mar 16</span>
+                <div class="bar" style="width: 271px"></div>
+                <span class="week-dist">15.6km</span>
+            </div>
+            <div class="week-bar">
+                <span class="week-label">Mar 09</span>
+                <div class="bar" style="width: 130px"></div>
+                <span class="week-dist">7.5km</span>
+            </div>
+            <div class="week-bar">
+                <span class="week-label">Mar 02</span>
+                <div class="bar" style="width: 148px"></div>
+                <span class="week-dist">8.5km</span>
+            </div>
+            <div class="week-bar">
+                <span class="week-label">Feb 16</span>
+                <div class="bar" style="width: 158px"></div>
+                <span class="week-dist">9.1km</span>
+            </div>
+            <div class="week-bar">
+                <span class="week-label">Feb 09</span>
+                <div class="bar" style="width: 300px"></div>
+                <span class="week-dist">17.2km</span>
+            </div>
+            <div class="week-bar">
+                <span class="week-label">Feb 02</span>
+                <div class="bar" style="width: 270px"></div>
+                <span class="week-dist">15.6km</span>
+            </div>
+            <div class="week-bar">
+                <span class="week-label">Jan 26</span>
+                <div class="bar" style="width: 244px"></div>
+                <span class="week-dist">14.1km</span>
+            </div>
+            <div class="week-bar">
+                <span class="week-label">Jan 19</span>
+                <div class="bar" style="width: 146px"></div>
+                <span class="week-dist">8.4km</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Recent Runs</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Distance</th>
+                        <th>Time</th>
+                        <th>Pace</th>
+                        <th>Avg HR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2026-03-21</td>
+                        <td><span class="badge" style="background:#e74c3c">parkrun</span></td>
+                        <td>5.0km</td>
+                        <td>29:49</td>
+                        <td class="pace-fast">5:55/km</td>
+                        <td class="hr-z4plus">169.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-18</td>
+                        <td><span class="badge" style="background:#27ae60">easy</span></td>
+                        <td>5.1km</td>
+                        <td>35:56</td>
+                        <td class="pace-easy">7:04/km</td>
+                        <td class="hr-z3">147.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-16</td>
+                        <td><span class="badge" style="background:#27ae60">easy</span></td>
+                        <td>5.5km</td>
+                        <td>34:31</td>
+                        <td class="pace-moderate">6:16/km</td>
+                        <td class="hr-z2">145.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-11</td>
+                        <td><span class="badge" style="background:#27ae60">easy</span></td>
+                        <td>7.5km</td>
+                        <td>55:21</td>
+                        <td class="pace-easy">7:22/km</td>
+                        <td class="hr-z3">146.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-07</td>
+                        <td><span class="badge" style="background:#e74c3c">parkrun</span></td>
+                        <td>5.0km</td>
+                        <td>28:51</td>
+                        <td class="pace-fast">5:43/km</td>
+                        <td class="hr-z4plus">171.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-03</td>
+                        <td><span class="badge" style="background:#7f8c8d">run</span></td>
+                        <td>3.5km</td>
+                        <td>22:20</td>
+                        <td class="pace-moderate">6:24/km</td>
+                        <td class="hr-z3">151.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-17</td>
+                        <td><span class="badge" style="background:#27ae60">easy</span></td>
+                        <td>4.6km</td>
+                        <td>35:57</td>
+                        <td class="pace-easy">7:53/km</td>
+                        <td class="hr-z3">148.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-16</td>
+                        <td><span class="badge" style="background:#27ae60">easy</span></td>
+                        <td>4.5km</td>
+                        <td>33:01</td>
+                        <td class="pace-easy">7:15/km</td>
+                        <td class="hr-z2">144.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-14</td>
+                        <td><span class="badge" style="background:#e74c3c">parkrun</span></td>
+                        <td>5.0km</td>
+                        <td>24:45</td>
+                        <td class="pace-fast">4:54/km</td>
+                        <td class="hr-z4plus">166.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-11</td>
+                        <td><span class="badge" style="background:#27ae60">easy</span></td>
+                        <td>5.0km</td>
+                        <td>33:51</td>
+                        <td class="pace-moderate">6:44/km</td>
+                        <td class="hr-z2">145.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-09</td>
+                        <td><span class="badge" style="background:#7f8c8d">run</span></td>
+                        <td>7.2km</td>
+                        <td>49:29</td>
+                        <td class="pace-moderate">6:54/km</td>
+                        <td class="hr-z3">152.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-07</td>
+                        <td><span class="badge" style="background:#e74c3c">parkrun</span></td>
+                        <td>5.0km</td>
+                        <td>27:33</td>
+                        <td class="pace-fast">5:29/km</td>
+                        <td class="hr-z4plus">175.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-05</td>
+                        <td><span class="badge" style="background:#7f8c8d">run</span></td>
+                        <td>5.5km</td>
+                        <td>36:42</td>
+                        <td class="pace-moderate">6:40/km</td>
+                        <td class="hr-z3">153.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-03</td>
+                        <td><span class="badge" style="background:#27ae60">easy</span></td>
+                        <td>5.0km</td>
+                        <td>35:52</td>
+                        <td class="pace-easy">7:07/km</td>
+                        <td class="hr-z3">147.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-31</td>
+                        <td><span class="badge" style="background:#e74c3c">parkrun</span></td>
+                        <td>5.0km</td>
+                        <td>33:01</td>
+                        <td class="pace-moderate">6:33/km</td>
+                        <td class="hr-z3">158.0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Parkrun Progression</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Pace</th>
+                        <th>Avg HR</th>
+                        <th>Max HR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2026-03-21</td>
+                        <td><strong>29:49</strong></td>
+                        <td class="pace-fast">5:55/km</td>
+                        <td>169.0</td>
+                        <td>182.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-07</td>
+                        <td><strong>28:51</strong></td>
+                        <td class="pace-fast">5:43/km</td>
+                        <td>171.0</td>
+                        <td>187.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-14</td>
+                        <td><strong>24:45</strong></td>
+                        <td class="pace-fast">4:54/km</td>
+                        <td>166.0</td>
+                        <td>187.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-02-07</td>
+                        <td><strong>27:33</strong></td>
+                        <td class="pace-fast">5:29/km</td>
+                        <td>175.0</td>
+                        <td>186.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-31</td>
+                        <td><strong>33:01</strong></td>
+                        <td class="pace-moderate">6:33/km</td>
+                        <td>158.0</td>
+                        <td>183.0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-24</td>
+                        <td><strong>27:35</strong></td>
+                        <td class="pace-fast">5:28/km</td>
+                        <td>172.0</td>
+                        <td>189.0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="updated">
+            Last updated: March 22, 2026 at 21:10 AEST<br>
+            Auto-generated from Garmin Connect data
+        </div>
+    </div>
+</body>
+</html>
