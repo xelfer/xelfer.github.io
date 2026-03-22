@@ -29,7 +29,7 @@ plugins:
 
 # Include health dashboard (raw HTML, not processed by Jekyll)
 include:
-  - health
+  - running
 
 # Sidebar link settings
 sidebar_home_link:  true
