@@ -168,8 +168,33 @@
         .plan-day .day-session { color: #e1e4e8; flex: 1; margin-left: 1rem; }
         .plan-day .day-target { color: #8b949e; font-size: 0.85rem; }
         .plan-day.rest .day-session { color: #484f58; }
-        .plan-day.done { opacity: 0.6; }
-        .plan-day.done .day-session { text-decoration: line-through; }
+        .plan-day.done .day-session { color: #8b949e; }
+        .plan-day.done .status-icon { color: #3fb950 !important; }
+        .has-tooltip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted #484f58;
+        }
+        .has-tooltip .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: #1c2129;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 0.75rem;
+            min-width: 260px;
+            z-index: 10;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #e1e4e8;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            white-space: normal;
+        }
+        .has-tooltip:hover .tooltip { display: block; }
+        .tooltip-title { color: #d2a8ff; font-weight: 600; margin-bottom: 0.35rem; }
+        .tooltip-item { color: #8b949e; }
         .plan-day.missed { }
         .plan-day.missed .day-session { color: #f85149; text-decoration: line-through; }
         .plan-day.today { background: rgba(136, 46, 224, 0.1); border-radius: 6px; padding-left: 0.5rem; }
@@ -252,7 +277,7 @@
         <div class="container">
             <h1>Nick's Training Dashboard</h1>
             <div class="subtitle">Half Marathon Prep &middot; Race Day: April 26, 2026</div>
-            <div class="race-countdown">34 days to race &middot; Week 2 of 5</div>
+            <div class="race-countdown">34 days to race &middot; Week 1 of 5</div>
         </div>
     </div>
     <div class="container">
@@ -321,7 +346,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Mar 25</span>
-                    <span class="day-session">Leg circuit</span>
+                    <span class="day-session"><span class="has-tooltip">Leg circuit<span class="tooltip"><div class="tooltip-title">Leg Strength Circuit</div><div class="tooltip-item">1. Bodyweight squats &mdash; 3&times;15</div><div class="tooltip-item">2. Calf raises &mdash; 3&times;20 (+ 10 each single-leg)</div><div class="tooltip-item">3. Single-leg RDL &mdash; 3&times;10 each side</div><div class="tooltip-item">4. Wall sit &mdash; 3&times;30 sec</div></span></span></span>
                     <span class="day-target">15 min, light</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -331,7 +356,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Mar 27</span>
-                    <span class="day-session">Leg circuit</span>
+                    <span class="day-session"><span class="has-tooltip">Leg circuit<span class="tooltip"><div class="tooltip-title">Leg Strength Circuit</div><div class="tooltip-item">1. Bodyweight squats &mdash; 3&times;15</div><div class="tooltip-item">2. Calf raises &mdash; 3&times;20 (+ 10 each single-leg)</div><div class="tooltip-item">3. Single-leg RDL &mdash; 3&times;10 each side</div><div class="tooltip-item">4. Wall sit &mdash; 3&times;30 sec</div></span></span></span>
                     <span class="day-target">15 min, light</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -341,7 +366,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Mar 29</span>
-                    <span class="day-session">Parkrun (pacing practice)</span>
+                    <span class="day-session"><span class="has-tooltip">Parkrun (pacing practice)<span class="tooltip"><div class="tooltip-title">Parkrun Pacing Protocol</div><div class="tooltip-item">First 1km: 6:15-6:20/km (hold back)</div><div class="tooltip-item">Middle 3km: 6:00-6:10/km (settle)</div><div class="tooltip-item">Last 1km: Whatever's left</div><div class="tooltip-item" style="margin-top:0.25rem; color:#d2a8ff">Target HR: 155-165 avg (NOT 170+)</div></span></span></span>
                     <span class="day-target">Even splits ~6:10/km, NO hard start, monitor shin niggle</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -363,7 +388,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Apr 1</span>
-                    <span class="day-session">Leg circuit</span>
+                    <span class="day-session"><span class="has-tooltip">Leg circuit<span class="tooltip"><div class="tooltip-title">Leg Strength Circuit</div><div class="tooltip-item">1. Bodyweight squats &mdash; 3&times;15</div><div class="tooltip-item">2. Calf raises &mdash; 3&times;20 (+ 10 each single-leg)</div><div class="tooltip-item">3. Single-leg RDL &mdash; 3&times;10 each side</div><div class="tooltip-item">4. Wall sit &mdash; 3&times;30 sec</div></span></span></span>
                     <span class="day-target">15 min, light</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -373,7 +398,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Apr 3</span>
-                    <span class="day-session">Leg circuit</span>
+                    <span class="day-session"><span class="has-tooltip">Leg circuit<span class="tooltip"><div class="tooltip-title">Leg Strength Circuit</div><div class="tooltip-item">1. Bodyweight squats &mdash; 3&times;15</div><div class="tooltip-item">2. Calf raises &mdash; 3&times;20 (+ 10 each single-leg)</div><div class="tooltip-item">3. Single-leg RDL &mdash; 3&times;10 each side</div><div class="tooltip-item">4. Wall sit &mdash; 3&times;30 sec</div></span></span></span>
                     <span class="day-target">15 min, light</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -383,7 +408,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Apr 5</span>
-                    <span class="day-session">Parkrun (pacing practice)</span>
+                    <span class="day-session"><span class="has-tooltip">Parkrun (pacing practice)<span class="tooltip"><div class="tooltip-title">Parkrun Pacing Protocol</div><div class="tooltip-item">First 1km: 6:15-6:20/km (hold back)</div><div class="tooltip-item">Middle 3km: 6:00-6:10/km (settle)</div><div class="tooltip-item">Last 1km: Whatever's left</div><div class="tooltip-item" style="margin-top:0.25rem; color:#d2a8ff">Target HR: 155-165 avg (NOT 170+)</div></span></span></span>
                     <span class="day-target">Even splits ~6:05/km, target ~30:30</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -405,7 +430,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Tue Apr 8</span>
-                    <span class="day-session">Leg circuit</span>
+                    <span class="day-session"><span class="has-tooltip">Leg circuit<span class="tooltip"><div class="tooltip-title">Leg Strength Circuit</div><div class="tooltip-item">1. Bodyweight squats &mdash; 3&times;15</div><div class="tooltip-item">2. Calf raises &mdash; 3&times;20 (+ 10 each single-leg)</div><div class="tooltip-item">3. Single-leg RDL &mdash; 3&times;10 each side</div><div class="tooltip-item">4. Wall sit &mdash; 3&times;30 sec</div></span></span></span>
                     <span class="day-target">15 min, light</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -415,7 +440,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Thu Apr 10</span>
-                    <span class="day-session">Leg circuit</span>
+                    <span class="day-session"><span class="has-tooltip">Leg circuit<span class="tooltip"><div class="tooltip-title">Leg Strength Circuit</div><div class="tooltip-item">1. Bodyweight squats &mdash; 3&times;15</div><div class="tooltip-item">2. Calf raises &mdash; 3&times;20 (+ 10 each single-leg)</div><div class="tooltip-item">3. Single-leg RDL &mdash; 3&times;10 each side</div><div class="tooltip-item">4. Wall sit &mdash; 3&times;30 sec</div></span></span></span>
                     <span class="day-target">15 min, light</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -425,7 +450,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Apr 12</span>
-                    <span class="day-session">Parkrun (pacing practice)</span>
+                    <span class="day-session"><span class="has-tooltip">Parkrun (pacing practice)<span class="tooltip"><div class="tooltip-title">Parkrun Pacing Protocol</div><div class="tooltip-item">First 1km: 6:15-6:20/km (hold back)</div><div class="tooltip-item">Middle 3km: 6:00-6:10/km (settle)</div><div class="tooltip-item">Last 1km: Whatever's left</div><div class="tooltip-item" style="margin-top:0.25rem; color:#d2a8ff">Target HR: 155-165 avg (NOT 170+)</div></span></span></span>
                     <span class="day-target">Controlled, even splits</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -467,7 +492,7 @@
                 </div>
                 <div class="plan-day upcoming">
                     <span class="day-name"><span class="status-icon" style="color:#484f58">&#9675;</span>Sat Apr 19</span>
-                    <span class="day-session">Parkrun (easy effort)</span>
+                    <span class="day-session"><span class="has-tooltip">Parkrun (easy effort)<span class="tooltip"><div class="tooltip-title">Parkrun Pacing Protocol</div><div class="tooltip-item">First 1km: 6:15-6:20/km (hold back)</div><div class="tooltip-item">Middle 3km: 6:00-6:10/km (settle)</div><div class="tooltip-item">Last 1km: Whatever's left</div><div class="tooltip-item" style="margin-top:0.25rem; color:#d2a8ff">Target HR: 155-165 avg (NOT 170+)</div></span></span></span>
                     <span class="day-target">~27:00-28:00, save legs</span>
                 </div>
                 <div class="plan-day upcoming">
@@ -786,7 +811,7 @@
         </div>
 
         <div class="updated">
-            Last updated: March 22, 2026 at 21:52 AEST<br>
+            Last updated: March 22, 2026 at 22:02 AEST<br>
             Auto-generated from Garmin Connect &amp; intervals.icu
         </div>
     </div>
