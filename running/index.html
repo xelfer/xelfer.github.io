@@ -786,7 +786,7 @@
         </div>
 
         <div class="updated">
-            Last updated: March 22, 2026 at 21:45 AEST<br>
+            Last updated: March 22, 2026 at 21:49 AEST<br>
             Auto-generated from Garmin Connect &amp; intervals.icu
         </div>
     </div>
@@ -897,6 +897,24 @@
                         tension: 0.3,
                         pointRadius: 0,
                         borderWidth: 2,
+                        segment: {
+                            borderColor: function(ctx) {
+                                const y = ctx.p1.parsed.y;
+                                if (y < -25) return '#f85149';       // High Risk - red
+                                if (y < -10) return '#3fb950';       // Optimal - green
+                                if (y < 5) return '#8b949e';         // Grey Zone - grey
+                                if (y < 25) return '#58a6ff';        // Fresh - blue
+                                return '#58a6ff';                     // Transition - blue
+                            },
+                            backgroundColor: function(ctx) {
+                                const y = ctx.p1.parsed.y;
+                                if (y < -25) return 'rgba(248, 81, 73, 0.1)';
+                                if (y < -10) return 'rgba(63, 185, 80, 0.1)';
+                                if (y < 5) return 'rgba(139, 148, 158, 0.05)';
+                                if (y < 25) return 'rgba(88, 166, 255, 0.08)';
+                                return 'rgba(88, 166, 255, 0.08)';
+                            }
+                        }
                     },
                 ]
             },
