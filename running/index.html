@@ -29,15 +29,45 @@
             color: #8b949e;
             font-size: 0.95rem;
         }
-        .header .race-countdown {
-            display: inline-block;
+        .race-countdowns {
+            display: flex;
+            gap: 1rem;
             margin-top: 0.75rem;
-            padding: 0.5rem 1rem;
+            flex-wrap: wrap;
+        }
+        .race-box {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .race-box .days {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+        .race-box .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.2rem;
+        }
+        .race-box.half {
             background: rgba(136, 46, 224, 0.2);
             border: 1px solid rgba(136, 46, 224, 0.4);
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
+            color: #d2a8ff;
+        }
+        .race-box.marathon {
+            background: rgba(46, 160, 67, 0.15);
+            border: 1px solid rgba(46, 160, 67, 0.35);
+            color: #3fb950;
+        }
+        .race-box.week {
+            background: rgba(210, 168, 255, 0.1);
+            border: 1px solid rgba(210, 168, 255, 0.2);
+            color: #8b949e;
+        }
+        .race-box.week .days {
+            font-size: 1.4rem;
             color: #d2a8ff;
         }
         .container {
@@ -276,8 +306,21 @@
     <div class="header">
         <div class="container">
             <h1>Nick's Training Dashboard</h1>
-            <div class="subtitle">Half Marathon Prep &middot; Race Day: April 26, 2026</div>
-            <div class="race-countdown">31 days to half &middot; 157 days to Sydney Marathon &middot; Week 1 of 5</div>
+            <div class="subtitle">Half Marathon Prep &middot; April 26, 2026</div>
+            <div class="race-countdowns">
+                <div class="race-box half">
+                    <div class="days">31</div>
+                    <div class="label">Days to Half</div>
+                </div>
+                <div class="race-box marathon">
+                    <div class="days">157</div>
+                    <div class="label">Days to Sydney Marathon</div>
+                </div>
+                <div class="race-box week">
+                    <div class="days">Week 1/5</div>
+                    <div class="label">Training Block</div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="container">
@@ -804,7 +847,7 @@
         </div>
 
         <div class="updated">
-            Last updated: March 25, 2026 at 09:50 AEST<br>
+            Last updated: March 25, 2026 at 09:52 AEST<br>
             Auto-generated from Garmin Connect &amp; intervals.icu
         </div>
     </div>
