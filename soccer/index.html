@@ -640,7 +640,7 @@ input:focus,select:focus{border-color:var(--blue);}
     <div class="header-row">
       <button class="header-btn" onclick="showScreen('setup')">Back</button>
       <h1>Game History</h1>
-      <div style="width:50px;"></div>
+      <button class="header-btn" onclick="clearHistory()" style="font-size:.75rem;color:var(--red);">Clear All</button>
     </div>
   </div>
   <div class="tab-bar">
@@ -2028,6 +2028,15 @@ function toggleHistoryGame(i) {
 function deleteGame(i) {
   showConfirm('Delete Game?', 'This cannot be undone.', function() {
     gameHistory.splice(i, 1);
+    saveHistory();
+    renderHistory();
+  });
+}
+
+function clearHistory() {
+  if (gameHistory.length === 0) return;
+  showConfirm('Clear all history?', 'This deletes all ' + gameHistory.length + ' games. Cannot be undone.', function() {
+    gameHistory = [];
     saveHistory();
     renderHistory();
   });
