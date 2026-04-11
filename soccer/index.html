@@ -1872,8 +1872,17 @@ function finishGame() {
 }
 
 function confirmEndGame() {
+  if (!game) return;
+  // If game isn't running, just end immediately
+  if (!game.halfRunning) {
+    flushTime();
+    showGameOver();
+    return;
+  }
   showConfirm('End Game?', 'This will end the current game.', function() {
+    game.halfRunning = false;
     clearInterval(halfTimer); clearInterval(timeTracker);
+    halfTimer = null; timeTracker = null;
     flushTime();
     showGameOver();
   });
@@ -1887,7 +1896,11 @@ function showConfirm(title, msg, cb) {
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMsg').textContent = msg;
   confirmCallback = cb;
-  document.getElementById('confirmAction').onclick = function() { closeConfirm(); if (confirmCallback) confirmCallback(); };
+  document.getElementById('confirmAction').onclick = function() {
+    var fn = confirmCallback;
+    closeConfirm();
+    if (fn) fn();
+  };
   document.getElementById('confirmOverlay').classList.add('active');
 }
 function closeConfirm() {
