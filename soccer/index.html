@@ -717,6 +717,7 @@ function loadGame() {
   if (!saved) return false;
   try {
     game = JSON.parse(saved);
+    game.subMode = 'auto'; // force auto for old saved games
     if (game.halfRunning && game._savedAt) {
       // Timer was running - calculate how much time passed since save
       var elapsedSinceLeave = Math.round((Date.now() - game._savedAt) / 1000);
@@ -741,7 +742,7 @@ function loadGame() {
         halfTimer = setInterval(tickHalf, 1000);
         timeTracker = setInterval(trackTime, 1000);
         // Regenerate schedule for remaining time
-        if (game.subMode === 'auto') generateAutoSchedule();
+        generateAutoSchedule();
       }
     }
     return true;
@@ -1494,7 +1495,7 @@ function startHalf() {
     if (p.status === 'field' || p.status === 'goalie') p.lastOnFieldAt = now;
   });
 
-  if (game.subMode === 'auto') generateAutoSchedule();
+  generateAutoSchedule();
 
   halfTimer = setInterval(tickHalf, 1000);
   timeTracker = setInterval(trackTime, 1000);
