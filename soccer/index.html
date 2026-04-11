@@ -433,8 +433,15 @@ input:focus,select:focus{border-color:var(--blue);}
           <input type="number" id="cfgHalfLength" value="20" min="1" max="60">
         </div>
         <div class="form-group">
-          <label>Subs per rotation</label>
+          <label>Subs at once</label>
           <input type="number" id="cfgSubsPerRotation" value="2" min="1" max="6">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Rotations per player</label>
+          <input type="number" id="cfgRotationsPerPlayer" value="1" min="1" max="5">
+          <div style="font-size:.65rem;color:var(--text3);margin-top:2px;">How many times each player sits out per game</div>
         </div>
       </div>
       <div class="form-group">
@@ -843,6 +850,7 @@ function renderSetup() {
   if (cfg.fieldPlayers) document.getElementById('cfgFieldPlayers').value = cfg.fieldPlayers;
   if (cfg.halfLength) document.getElementById('cfgHalfLength').value = cfg.halfLength;
   if (cfg.subsPerRotation) document.getElementById('cfgSubsPerRotation').value = cfg.subsPerRotation;
+  if (cfg.rotationsPerPlayer) document.getElementById('cfgRotationsPerPlayer').value = cfg.rotationsPerPlayer;
   setSubMode(subMode);
 }
 
@@ -1008,6 +1016,7 @@ function startGame() {
   var fieldPlayers = parseInt(document.getElementById('cfgFieldPlayers').value) || 7;
   var halfLength = parseInt(document.getElementById('cfgHalfLength').value) || 20;
   var subsPerRotation = parseInt(document.getElementById('cfgSubsPerRotation').value) || 2;
+  var rotationsPerPlayer = parseInt(document.getElementById('cfgRotationsPerPlayer').value) || 1;
   var errEl = document.getElementById('startError');
 
   if (available.length < fieldPlayers) {
@@ -1025,7 +1034,7 @@ function startGame() {
   errEl.style.display = 'none';
 
   localStorage.setItem('st_config', JSON.stringify({
-    fieldPlayers: fieldPlayers, halfLength: halfLength, subsPerRotation: subsPerRotation
+    fieldPlayers: fieldPlayers, halfLength: halfLength, subsPerRotation: subsPerRotation, rotationsPerPlayer: rotationsPerPlayer
   }));
 
   game = {
@@ -1036,6 +1045,7 @@ function startGame() {
     fieldPlayers: fieldPlayers,
     halfLengthSecs: halfLength * 60,
     subsPerRotation: subsPerRotation,
+    rotationsPerPlayer: rotationsPerPlayer,
     subMode: subMode,
     half: 1,
     halfRunning: false,
@@ -1426,35 +1436,55 @@ function generateAutoSchedule() {
 
   var fieldSlots = field.length; // excludes goalie
   var totalOutfield = field.length + bench.length;
+  var benchSlots = bench.length;
   var halfSecs = game.halfRemaining;
-  var subsPerRotation = game.subsPerRotation || 2;
+  var totalGameSecs = game.halfLengthSecs * 2;
+  var subsAtOnce = Math.min(game.subsPerRotation || 2, benchSlots);
+  var rotPerPlayer = game.rotationsPerPlayer || 1;
 
-  // How many rotation periods do we need?
-  // Each period, fieldSlots players are on. Over N periods, each player plays fieldSlots*halfSecs/totalOutfield.
-  // Number of periods = ceil(totalOutfield / fieldSlots)
-  var numPeriods = Math.ceil(totalOutfield / fieldSlots);
-  if (numPeriods <= 1) return; // Everyone fits, no subs needed
+  // Each player sits out rotPerPlayer times across the whole game.
+  // Total sit time per player = benchSlots * totalGameSecs / totalOutfield
+  // Per rotation: sitDuration = totalSitTime / rotPerPlayer
+  // Interval between sub events = subsAtOnce * totalGameSecs / (totalOutfield * rotPerPlayer)
+  var interval = Math.floor(subsAtOnce * totalGameSecs / (totalOutfield * rotPerPlayer));
+  if (interval < 20) interval = 20; // sanity minimum
 
-  var periodLength = Math.floor(halfSecs / numPeriods);
-  if (periodLength < 20) return; // Too short to bother
+  // Figure out how far into the game we are (accounts for half 2 continuing from half 1)
+  var elapsedInGame = (game.half === 1)
+    ? (game.halfLengthSecs - halfSecs)
+    : (game.halfLengthSecs + game.halfLengthSecs - halfSecs);
 
-  // Build sub events at the end of each period (except the last)
-  var currentField = field.slice().sort(function(a, b) { return b.fieldTime - a.fieldTime; });
-  var currentBench = bench.slice().sort(function(a, b) { return a.fieldTime - b.fieldTime; });
+  // Find the next sub time relative to game start
+  var nextSubGameTime = interval;
+  while (nextSubGameTime <= elapsedInGame) {
+    nextSubGameTime += interval;
+  }
 
-  for (var period = 1; period < numPeriods; period++) {
-    var elapsed = period * periodLength;
-    var atRemaining = halfSecs - elapsed;
-    if (atRemaining < 10) break;
+  // Generate sub events that fall within this half's remaining time
+  var currentField = field.slice();
+  var currentBench = bench.slice();
+  var halfStartGameTime = (game.half === 1) ? 0 : game.halfLengthSecs;
 
-    // How many to swap this rotation
-    var pairsCount = Math.min(subsPerRotation, currentBench.length, currentField.length);
+  while (true) {
+    // How far into THIS half does the sub happen?
+    var elapsedThisHalf = nextSubGameTime - halfStartGameTime;
+    // Time remaining in half when sub fires
+    var atRemaining = game.halfLengthSecs - elapsedThisHalf;
+
+    if (atRemaining < 10) break; // too close to end of half
+    // Skip if this sub already happened (before current point in half)
+    if (atRemaining > halfSecs) { nextSubGameTime += interval; continue; }
+
+    var pairsCount = Math.min(subsAtOnce, currentBench.length, currentField.length);
     if (pairsCount === 0) break;
 
     var pairs = [];
     for (var i = 0; i < pairsCount; i++) {
-      // Re-sort: off = most cumulative time, on = least cumulative time
-      currentField.sort(function(a, b) { return (b.fieldTime + elapsed) - (a.fieldTime + elapsed); });
+      // Off: player with most total field time (including estimated time this half)
+      var estElapsed = halfSecs - atRemaining;
+      currentField.sort(function(a, b) {
+        return (b.fieldTime + estElapsed) - (a.fieldTime + estElapsed);
+      });
       currentBench.sort(function(a, b) { return a.fieldTime - b.fieldTime; });
 
       var offPlayer = currentField[0];
@@ -1473,8 +1503,10 @@ function generateAutoSchedule() {
     }
 
     if (pairs.length > 0) {
-      subSchedule.push({ atRemaining: Math.max(0, atRemaining), pairs: pairs });
+      subSchedule.push({ atRemaining: atRemaining, pairs: pairs });
     }
+
+    nextSubGameTime += interval;
   }
 }
 
