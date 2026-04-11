@@ -923,7 +923,8 @@ function renderRoster() {
   var empty = document.getElementById('rosterEmpty');
   if (roster.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  list.innerHTML = roster.map(function(p) {
+  var sorted = roster.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+  list.innerHTML = sorted.map(function(p) {
     return '<div class="player-item">' +
       '<div class="name">' + esc(p.name) + '</div>' +
       '<span class="player-badge ' + (p.available !== false ? 'badge-available' : 'badge-unavailable') + '"' +
