@@ -1565,19 +1565,61 @@ function executeAutoSub(ev) {
 
 // ==================== MANUAL SUBS ====================
 function toggleFieldSelect(id) {
+  if (!game || !game.halfRunning) return;
+  var bench = game.players.filter(function(p) { return p.status === 'bench'; });
+  // If only 1 bench player, instant swap
+  if (bench.length === 1) {
+    doInstantSwap(id, bench[0].id);
+    return;
+  }
+  // Otherwise multi-select
   var idx = manualSubFieldSelected.indexOf(id);
   if (idx >= 0) manualSubFieldSelected.splice(idx, 1);
   else manualSubFieldSelected.push(id);
+  // Auto-execute if we have enough bench selected to match
+  if (manualSubFieldSelected.length > 0 && manualSubFieldSelected.length === manualSubBenchSelected.length) {
+    executeMultiSub(); return;
+  }
   renderGamePlayers();
   updateMultiSubBar();
 }
 
 function toggleBenchSelect(id) {
+  if (!game || !game.halfRunning) return;
+  var field = game.players.filter(function(p) { return p.status === 'field'; });
+  // If only 1 field player selected already, instant swap
+  if (manualSubFieldSelected.length === 1) {
+    doInstantSwap(manualSubFieldSelected[0], id);
+    return;
+  }
   var idx = manualSubBenchSelected.indexOf(id);
   if (idx >= 0) manualSubBenchSelected.splice(idx, 1);
   else manualSubBenchSelected.push(id);
+  if (manualSubBenchSelected.length > 0 && manualSubFieldSelected.length === manualSubBenchSelected.length) {
+    executeMultiSub(); return;
+  }
   renderGamePlayers();
   updateMultiSubBar();
+}
+
+function doInstantSwap(fieldId, benchId) {
+  if (!game || !game.halfRunning) return;
+  var now = Date.now();
+  var offP = game.players.find(function(p) { return p.id === fieldId; });
+  var onP = game.players.find(function(p) { return p.id === benchId; });
+  if (!offP || !onP) return;
+  if (offP.lastOnFieldAt) {
+    offP.fieldTime += Math.round((now - offP.lastOnFieldAt) / 1000);
+    offP.lastOnFieldAt = null;
+  }
+  var posIdx = offP.positionIndex;
+  offP.status = 'bench'; offP.positionIndex = -1;
+  onP.status = 'field'; onP.positionIndex = posIdx; onP.lastOnFieldAt = now;
+  manualSubFieldSelected = []; manualSubBenchSelected = [];
+  showSubAlertMulti([{ offName: offP.name, onName: onP.name }]);
+  playBeep(660, 0.2, 2); vibrate([200, 100, 200]);
+  if (game.subMode === 'auto' && game.halfRunning) generateAutoSchedule();
+  renderGame();
 }
 
 function updateMultiSubBar() {
