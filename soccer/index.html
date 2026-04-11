@@ -1049,22 +1049,50 @@ function onSetupPitchTap(posIndex) {
   var avail = roster.filter(function(p) { return p.available !== false; });
   if (avail.length === 0) return;
 
+  var isGKPos = pos.role === 'GK';
+
+  // GK position: must pick goalies first
+  if (isGKPos && !goalie1Id && !goalie2Id) {
+    document.getElementById('posPickerTitle').textContent = 'Select goalies first';
+    document.getElementById('posPickerSubtitle').textContent = 'Use the Goalie Assignment section above to pick goalies before assigning the GK position';
+    document.getElementById('posPickerList').innerHTML = '';
+    document.getElementById('posPickerOverlay').classList.add('active');
+    return;
+  }
+
   document.getElementById('posPickerTitle').textContent = 'Assign ' + pos.role + ' Position';
-  document.getElementById('posPickerSubtitle').textContent = 'Select a player for this position';
+  document.getElementById('posPickerSubtitle').textContent = isGKPos
+    ? 'Select which goalie starts Half 1'
+    : 'Select a player for this position';
+
   // Find which players are already assigned to other positions
   var assignedIds = [];
   for (var key in setupPositions) {
     if (parseInt(key) !== posIndex && setupPositions[key]) assignedIds.push(setupPositions[key]);
   }
-  // Also count goalie assignments
-  if (goalie1Id && posIndex !== 0) assignedIds.push(goalie1Id);
+
+  // Filter candidates based on position type
+  var candidates;
+  if (isGKPos) {
+    // GK position: only show the two selected goalies
+    candidates = avail.filter(function(p) { return p.id === goalie1Id || p.id === goalie2Id; });
+  } else {
+    // Field positions: exclude goalies from being assigned to field spots
+    candidates = avail;
+    // Mark goalies and already-assigned players
+    if (goalie1Id) assignedIds.push(goalie1Id);
+    if (goalie2Id && goalie2Id !== goalie1Id) assignedIds.push(goalie2Id);
+  }
 
   var list = document.getElementById('posPickerList');
-  list.innerHTML = avail.map(function(p) {
+  list.innerHTML = candidates.map(function(p) {
     var taken = assignedIds.indexOf(p.id) >= 0;
+    var label = esc(p.name);
+    if (isGKPos) label += p.id === goalie1Id ? ' (Half 1)' : ' (Half 2)';
+    if (taken && !isGKPos) label += ' <span style="font-size:.65rem;">(assigned)</span>';
     return '<button class="pos-picker-item" onclick="pickSetupPlayer(\'' + p.id + '\',' + posIndex + ')"' +
-      (taken ? ' style="opacity:.35;color:var(--text3);"' : '') + '>' +
-      esc(p.name) + (taken ? ' <span style="font-size:.65rem;">(assigned)</span>' : '') + '</button>';
+      (taken && !isGKPos ? ' style="opacity:.35;color:var(--text3);"' : '') + '>' +
+      label + '</button>';
   }).join('');
   document.getElementById('posPickerOverlay').classList.add('active');
 }
