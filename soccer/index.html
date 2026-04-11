@@ -142,8 +142,11 @@ input:focus,select:focus{border-color:var(--blue);}
 .game-layout{display:flex;gap:12px;flex-direction:column;}
 @media(min-width:640px){
   .game-layout{flex-direction:row;align-items:flex-start;}
-  .game-layout .pitch-col{flex:0 0 260px;position:sticky;top:80px;}
+  .game-layout .pitch-col{flex:0 0 320px;position:sticky;top:80px;}
   .game-layout .players-col{flex:1;min-width:0;}
+}
+@media(min-width:900px){
+  .game-layout .pitch-col{flex:0 0 380px;}
 }
 
 /* Pitch */
@@ -662,6 +665,7 @@ var gameHistory = JSON.parse(localStorage.getItem('st_history') || '[]');
 var subMode = localStorage.getItem('st_subMode') || 'auto';
 var goalie1Id = null, goalie2Id = null;
 var selectedFormation = localStorage.getItem('st_formation') || '1-3-3';
+var setupPositions = JSON.parse(localStorage.getItem('st_setupPositions') || '{}'); // posIndex -> playerId
 
 // Migrate old single-roster data to team system
 (function migrateOldData() {
@@ -951,6 +955,8 @@ function renderFormationSelect() {
 function selectFormation(key) {
   selectedFormation = key;
   localStorage.setItem('st_formation', key);
+  setupPositions = {};
+  localStorage.setItem('st_setupPositions', JSON.stringify(setupPositions));
   renderFormationSelect();
   renderSetupPitch();
 }
@@ -965,10 +971,14 @@ function renderSetupPitch() {
   for (var i = 0; i < f.positions.length; i++) {
     var pos = f.positions[i];
     var cls = pos.role === 'GK' ? 'goalie-dot' : 'field-dot';
-    // Check if any player is pre-assigned to this position
     var assigned = null;
+    // Check goalie positions
     if (i === 0 && goalie1Id) {
       assigned = avail.find(function(p) { return p.id === goalie1Id; });
+    }
+    // Check setup position assignments
+    if (!assigned && setupPositions[i]) {
+      assigned = avail.find(function(p) { return p.id === setupPositions[i]; });
     }
     var label = assigned ? abbrev(assigned.name) : pos.role;
     html += '<div class="pitch-player ' + cls + '" style="left:' + pos.x + '%;top:' + pos.y + '%;" ' +
@@ -997,7 +1007,14 @@ function onSetupPitchTap(posIndex) {
 
 function pickSetupPlayer(playerId, posIndex) {
   closePosPicker();
-  // For setup, if it's position 0 (GK), set goalie1Id
+  // Remove this player from any other position first
+  for (var key in setupPositions) {
+    if (setupPositions[key] === playerId) delete setupPositions[key];
+  }
+  // Assign to this position
+  setupPositions[posIndex] = playerId;
+  localStorage.setItem('st_setupPositions', JSON.stringify(setupPositions));
+  // If GK position, also set goalie
   if (posIndex === 0) {
     goalie1Id = playerId;
     renderGoalieSelects();
@@ -1215,7 +1232,18 @@ function updateSubTimer() {
 
 function renderAutoSchedule() {
   var list = document.getElementById('autoScheduleList');
-  list.innerHTML = subSchedule.map(function(ev, i) {
+  // Show the calculation for transparency
+  var bench = game.players.filter(function(p) { return p.status === 'bench'; });
+  var field = game.players.filter(function(p) { return p.status === 'field'; });
+  var subsAtOnce = Math.min(game.subsPerRotation || 2, bench.length || 1);
+  var totalOutfield = field.length + bench.length;
+  var totalGameSecs = game.halfLengthSecs * 2;
+  var rotPerPlayer = game.rotationsPerPlayer || 1;
+  var calcInterval = Math.floor(subsAtOnce * totalGameSecs / (totalOutfield * rotPerPlayer));
+  var infoHtml = '<div style="font-size:.65rem;color:var(--text3);margin-bottom:6px;">' +
+    field.length + ' field + ' + bench.length + ' bench = ' + totalOutfield + ' outfield, ' +
+    subsAtOnce + ' sub at once, rotate ' + rotPerPlayer + 'x &rarr; every ' + fmt(calcInterval) + '</div>';
+  list.innerHTML = infoHtml + subSchedule.map(function(ev, i) {
     var done = i < nextSubIndex;
     var current = i === nextSubIndex && game.halfRunning;
     var elapsed = game.halfLengthSecs - ev.atRemaining;
