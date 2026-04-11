@@ -204,7 +204,7 @@ input:focus,select:focus{border-color:var(--blue);}
 }
 /* Larger dots on setup pitch */
 #setupPitchPlayers .pitch-player{
-  min-width:52px;height:44px;font-size:.8rem;padding:0 10px;border-radius:22px;
+  min-width:60px;height:48px;font-size:.9rem;padding:0 12px;border-radius:24px;
 }
 .pitch-player.field-dot{background:var(--green);border:2px solid #2ea043;}
 .pitch-player.goalie-dot{background:var(--yellow);border:2px solid #b88a1a;color:#000;text-shadow:none;}
@@ -226,23 +226,23 @@ input:focus,select:focus{border-color:var(--blue);}
   background:var(--bg4);padding:1px 8px;border-radius:10px;font-size:.7rem;
 }
 .game-player{
-  display:flex;align-items:center;gap:8px;padding:10px;
-  border-radius:var(--radius-sm);margin-bottom:4px;min-height:48px;position:relative;overflow:hidden;
+  display:flex;align-items:center;gap:6px;padding:8px;
+  border-radius:var(--radius-sm);margin-bottom:4px;min-height:44px;position:relative;
 }
 .game-player.on-field{background:var(--green-bg);border:1px solid var(--green-border);}
 .game-player.on-bench{background:var(--bg3);border:1px solid var(--border);}
 .game-player.injured{background:var(--red-bg);border:1px solid var(--red-border);}
 .game-player.goalie{background:var(--yellow-bg);border:1px solid var(--yellow-border);}
 .game-player.selected-card{box-shadow:0 0 0 2px var(--blue);background:var(--blue-bg) !important;}
-.game-player .gp-name{flex:1;font-weight:700;font-size:.85rem;}
+.game-player .gp-name{flex:1;font-weight:700;font-size:.85rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .game-player .gp-time{
   font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;
-  min-width:40px;text-align:right;
+  white-space:nowrap;flex-shrink:0;
 }
-.game-player .gp-actions{display:flex;gap:4px;}
+.game-player .gp-actions{display:flex;gap:3px;flex-shrink:0;}
 .game-player .gp-actions button{
-  padding:5px 8px;border-radius:4px;font-size:.65rem;font-weight:700;
-  min-height:32px;min-width:32px;text-transform:uppercase;
+  padding:4px 6px;border-radius:4px;font-size:.6rem;font-weight:700;
+  min-height:30px;white-space:nowrap;text-transform:uppercase;
 }
 
 /* Schedule */
@@ -854,11 +854,25 @@ function showScreen(name) {
 function renderTeamSelector() {
   var el = document.getElementById('teamSelector');
   el.innerHTML = teams.map(function(t) {
-    return '<button class="team-chip ' + (t.id === currentTeamId ? 'active' : '') + '" ' +
+    var isActive = t.id === currentTeamId;
+    return '<button class="team-chip ' + (isActive ? 'active' : '') + '" ' +
       'onclick="selectTeam(\'' + t.id + '\')">' + esc(t.name) +
+      (isActive ? '<span onclick="event.stopPropagation();renameTeam(\'' + t.id + '\')" ' +
+        'style="margin-left:4px;font-size:.65rem;opacity:.6;padding:2px;" title="Rename">&#9998;</span>' : '') +
       '<span onclick="event.stopPropagation();deleteTeam(\'' + t.id + '\')" ' +
-      'style="margin-left:6px;color:var(--text3);font-size:.7rem;padding:2px;">&times;</span></button>';
+      'style="margin-left:4px;color:var(--text3);font-size:.7rem;padding:2px;">&times;</span></button>';
   }).join('');
+}
+
+function renameTeam(id) {
+  var team = teams.find(function(t) { return t.id === id; });
+  if (!team) return;
+  var newName = prompt('Rename team:', team.name);
+  if (newName && newName.trim()) {
+    team.name = newName.trim();
+    saveTeams();
+    renderSetup();
+  }
 }
 
 function addTeam() {
