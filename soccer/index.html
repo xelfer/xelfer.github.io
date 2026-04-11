@@ -1279,8 +1279,18 @@ function playerCard(p, cls, dueSoon) {
   var selected = isFieldSelected || isBenchSelected;
   var actions = '';
 
+  // Other-half goalie plays full half - no subbing off (unless same goalie both halves)
+  var protectedId = (game.goalie1Id !== game.goalie2Id)
+    ? (game.half === 1 ? game.goalie2Id : game.goalie1Id)
+    : null;
+  var isProtected = p.id === protectedId;
+
   if (p.status === 'field' && game.halfRunning) {
-    if (isFieldSelected) {
+    if (isProtected) {
+      // Only allow injury, not benching
+      actions = '<span style="font-size:.6rem;color:var(--blue);white-space:nowrap;">GK H' + (game.half === 1 ? '2' : '1') + '</span>' +
+        '<button class="btn btn-sm btn-danger" onclick="injurePlayer(\'' + p.id + '\')" style="padding:5px;">Inj</button>';
+    } else if (isFieldSelected) {
       actions = '<button class="btn btn-sm btn-warning" onclick="toggleFieldSelect(\'' + p.id + '\')">Cancel</button>';
     } else {
       actions = '<button class="btn btn-sm btn-secondary" onclick="toggleFieldSelect(\'' + p.id + '\')">Bench</button>' +
@@ -1328,16 +1338,20 @@ function updateSubTimer() {
 function renderAutoSchedule() {
   var list = document.getElementById('autoScheduleList');
   // Show the calculation for transparency
+  var protId = (game.goalie1Id !== game.goalie2Id)
+    ? (game.half === 1 ? game.goalie2Id : game.goalie1Id) : null;
   var bench = game.players.filter(function(p) { return p.status === 'bench'; });
   var field = game.players.filter(function(p) { return p.status === 'field'; });
+  var rotating = field.filter(function(p) { return p.id !== protId; });
   var subsAtOnce = Math.min(game.subsPerRotation || 2, bench.length || 1);
-  var totalOutfield = field.length + bench.length;
+  var totalOutfield = rotating.length + bench.length;
   var totalGameSecs = game.halfLengthSecs * 2;
   var rotPerPlayer = game.rotationsPerPlayer || 1;
   var calcInterval = Math.floor(subsAtOnce * totalGameSecs / (totalOutfield * rotPerPlayer));
   var infoHtml = '<div style="font-size:.65rem;color:var(--text3);margin-bottom:6px;">' +
-    field.length + ' field + ' + bench.length + ' bench = ' + totalOutfield + ' outfield, ' +
-    subsAtOnce + ' sub at once, rotate ' + rotPerPlayer + 'x &rarr; every ' + fmt(calcInterval) + '</div>';
+    rotating.length + ' rotating + ' + bench.length + ' bench' +
+    (protId ? ' + 1 locked' : '') +
+    ', ' + subsAtOnce + ' at once, ' + rotPerPlayer + 'x &rarr; every ' + fmt(calcInterval) + '</div>';
   list.innerHTML = infoHtml + subSchedule.map(function(ev, i) {
     var done = i < nextSubIndex;
     var current = i === nextSubIndex && game.halfRunning;
@@ -1576,13 +1590,20 @@ function generateAutoSchedule() {
   subSchedule = [];
   nextSubIndex = 0;
 
+  // The other-half goalie plays the full half and can't be subbed
+  var protectedId = (game.half === 1) ? game.goalie2Id : game.goalie1Id;
+  // Don't protect if same goalie both halves
+  if (game.goalie1Id === game.goalie2Id) protectedId = null;
+
   var bench = game.players.filter(function(p) { return p.status === 'bench'; });
   var field = game.players.filter(function(p) { return p.status === 'field'; });
+  // Exclude protected player from rotation
+  var rotatableField = field.filter(function(p) { return p.id !== protectedId; });
 
   if (bench.length === 0) return; // Everyone on field, no subs needed
 
-  var fieldSlots = field.length; // excludes goalie
-  var totalOutfield = field.length + bench.length;
+  var fieldSlots = rotatableField.length; // excludes goalie AND protected player
+  var totalOutfield = rotatableField.length + bench.length;
   var benchSlots = bench.length;
   var halfSecs = game.halfRemaining;
   var totalGameSecs = game.halfLengthSecs * 2;
@@ -1608,7 +1629,7 @@ function generateAutoSchedule() {
   }
 
   // Generate sub events that fall within this half's remaining time
-  var currentField = field.slice();
+  var currentField = rotatableField.slice();
   var currentBench = bench.slice();
   var halfStartGameTime = (game.half === 1) ? 0 : game.halfLengthSecs;
 
