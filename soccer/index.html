@@ -659,7 +659,8 @@ var teams = JSON.parse(localStorage.getItem('st_teams') || '[]');
 var currentTeamId = localStorage.getItem('st_currentTeam') || null;
 var gameHistory = JSON.parse(localStorage.getItem('st_history') || '[]');
 var subMode = 'auto';
-var goalie1Id = null, goalie2Id = null;
+var goalie1Id = localStorage.getItem('st_goalie1') || null;
+var goalie2Id = localStorage.getItem('st_goalie2') || null;
 var selectedFormation = localStorage.getItem('st_formation') || '1-3-3';
 var setupPositions = JSON.parse(localStorage.getItem('st_setupPositions') || '{}'); // posIndex -> playerId
 
@@ -894,7 +895,7 @@ function deleteTeam(id) {
       currentTeamId = teams.length > 0 ? teams[0].id : null;
       localStorage.setItem('st_currentTeam', currentTeamId || '');
     }
-    goalie1Id = null; goalie2Id = null;
+    goalie1Id = null; goalie2Id = null; saveGoalies();
     setupPositions = {};
     localStorage.setItem('st_setupPositions', '{}');
     saveTeams();
@@ -955,6 +956,7 @@ function removePlayer(id) {
   team.roster = team.roster.filter(function(p) { return p.id !== id; });
   if (goalie1Id === id) goalie1Id = null;
   if (goalie2Id === id) goalie2Id = null;
+  saveGoalies();
   saveTeams();
   renderRoster();
   renderGoalieSelects();
@@ -968,6 +970,7 @@ function toggleAvailable(id) {
   if (p && !p.available) {
     if (goalie1Id === id) goalie1Id = null;
     if (goalie2Id === id) goalie2Id = null;
+    saveGoalies();
   }
   saveTeams();
   renderRoster();
@@ -991,7 +994,13 @@ function renderGoalieSelects() {
 function selectGoalie(half, id) {
   if (half === 1) goalie1Id = goalie1Id === id ? null : id;
   else goalie2Id = goalie2Id === id ? null : id;
+  saveGoalies();
   renderGoalieSelects();
+}
+
+function saveGoalies() {
+  localStorage.setItem('st_goalie1', goalie1Id || '');
+  localStorage.setItem('st_goalie2', goalie2Id || '');
 }
 
 
@@ -1110,6 +1119,7 @@ function pickSetupPlayer(playerId, posIndex) {
   // If GK position, also set goalie
   if (posIndex === 0) {
     goalie1Id = playerId;
+    saveGoalies();
     renderGoalieSelects();
   }
   renderSetupPitch();
