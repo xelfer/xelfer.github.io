@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SubTracker - Soccer Substitution Manager</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0f1117;--bg2:#161b22;--bg3:#1c2230;--bg4:#242c3a;
+  --border:#30363d;--text:#e1e4e8;--text2:#8b949e;--text3:#6e7681;
+  --green:#3fb950;--green-bg:rgba(46,160,67,.15);--green-border:rgba(46,160,67,.35);
+  --red:#f85149;--red-bg:rgba(248,81,73,.15);--red-border:rgba(248,81,73,.35);
+  --yellow:#d29922;--yellow-bg:rgba(210,153,34,.15);--yellow-border:rgba(210,153,34,.35);
+  --blue:#58a6ff;--blue-bg:rgba(88,166,255,.15);--blue-border:rgba(88,166,255,.35);
+  --purple:#d2a8ff;--purple-bg:rgba(210,168,255,.1);--purple-border:rgba(210,168,255,.2);
+  --radius:10px;--radius-sm:6px;
+}
+html,body{height:100%;overflow-x:hidden;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.5;
+  -webkit-tap-highlight-color:transparent;
+}
+button{
+  font-family:inherit;cursor:pointer;border:none;outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+input,select{
+  font-family:inherit;outline:none;background:var(--bg3);
+  color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 14px;font-size:16px;width:100%;
+}
+input:focus,select:focus{border-color:var(--blue);}
+
+/* Screens */
+.screen{display:none;min-height:100vh;padding-bottom:80px;}
+.screen.active{display:block;}
+
+/* Header */
+.header{
+  background:linear-gradient(135deg,#1a1e2e 0%,#1b2e1a 100%);
+  padding:16px 20px;border-bottom:2px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.header h1{font-size:1.4rem;font-weight:700;color:#fff;}
+.header .subtitle{color:var(--text2);font-size:.85rem;}
+.header-row{display:flex;align-items:center;justify-content:space-between;}
+.header-btn{
+  background:var(--bg3);color:var(--text);padding:8px 14px;
+  border-radius:var(--radius-sm);font-size:.85rem;font-weight:600;
+  min-height:44px;display:flex;align-items:center;gap:6px;
+}
+.header-btn:active{background:var(--bg4);}
+
+/* Container */
+.container{max-width:600px;margin:0 auto;padding:16px;}
+
+/* Cards */
+.card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;margin-bottom:12px;
+}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 20px;border-radius:var(--radius-sm);font-size:.95rem;
+  font-weight:600;min-height:44px;min-width:44px;transition:all .15s;
+}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:active{background:#2ea043;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:active{background:#da3633;}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:active{background:var(--bg4);}
+.btn-warning{background:var(--yellow);color:#000;}
+.btn-warning:active{background:#b88a1a;}
+.btn-blue{background:var(--blue);color:#000;}
+.btn-blue:active{background:#388bfd;}
+.btn-sm{padding:8px 12px;font-size:.8rem;min-height:36px;}
+.btn-block{width:100%;}
+.btn:disabled{opacity:.4;pointer-events:none;}
+
+/* Form groups */
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:.85rem;color:var(--text2);margin-bottom:4px;font-weight:600;}
+.form-row{display:flex;gap:10px;}
+.form-row>*{flex:1;}
+
+/* Player list */
+.player-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--bg3);border-radius:var(--radius-sm);margin-bottom:6px;
+  min-height:52px;transition:all .2s;
+}
+.player-item .name{flex:1;font-weight:600;font-size:.95rem;}
+.player-item .time{font-size:.8rem;color:var(--text2);font-variant-numeric:tabular-nums;}
+.player-badge{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+}
+.badge-available{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.badge-unavailable{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.badge-goalie{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border);}
+
+/* Toggle switches */
+.toggle-group{
+  display:flex;background:var(--bg3);border-radius:var(--radius-sm);
+  border:1px solid var(--border);overflow:hidden;
+}
+.toggle-opt{
+  flex:1;padding:10px 16px;text-align:center;font-size:.85rem;
+  font-weight:600;color:var(--text2);background:transparent;
+  min-height:44px;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.toggle-opt.active{background:var(--blue);color:#000;}
+
+/* Icon buttons */
+.icon-btn{
+  width:36px;height:36px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:1.1rem;
+  background:var(--bg4);color:var(--text2);flex-shrink:0;
+  min-width:44px;min-height:44px;
+}
+.icon-btn:active{background:var(--border);}
+.icon-btn.danger{color:var(--red);}
+.icon-btn.danger:active{background:var(--red-bg);}
+
+/* Game screen */
+.game-timer{
+  text-align:center;padding:20px 0;
+}
+.game-timer .timer-value{
+  font-size:4rem;font-weight:800;font-variant-numeric:tabular-nums;
+  letter-spacing:2px;line-height:1;
+}
+.game-timer .timer-label{
+  font-size:.85rem;color:var(--text2);margin-top:4px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.game-timer .half-label{
+  font-size:1.1rem;font-weight:700;color:var(--blue);margin-bottom:4px;
+}
+.sub-timer{
+  text-align:center;padding:8px;margin:8px 0;border-radius:var(--radius-sm);
+  background:var(--purple-bg);border:1px solid var(--purple-border);
+}
+.sub-timer .sub-time{font-size:1.6rem;font-weight:700;color:var(--purple);font-variant-numeric:tabular-nums;}
+.sub-timer .sub-label{font-size:.75rem;color:var(--text2);text-transform:uppercase;}
+
+/* Player cards in game */
+.field-section{margin-bottom:16px;}
+.field-section-title{
+  font-size:.8rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text3);margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.field-section-title .count{
+  background:var(--bg4);padding:1px 8px;border-radius:10px;font-size:.75rem;
+}
+.game-player{
+  display:flex;align-items:center;gap:10px;padding:12px;
+  border-radius:var(--radius-sm);margin-bottom:6px;min-height:56px;
+  transition:all .25s;position:relative;overflow:hidden;
+}
+.game-player.on-field{background:var(--green-bg);border:1px solid var(--green-border);}
+.game-player.on-bench{background:var(--bg3);border:1px solid var(--border);}
+.game-player.injured{background:var(--red-bg);border:1px solid var(--red-border);}
+.game-player.goalie{background:var(--yellow-bg);border:1px solid var(--yellow-border);}
+.game-player .gp-name{flex:1;font-weight:700;font-size:.95rem;}
+.game-player .gp-time{
+  font-size:.85rem;font-weight:600;font-variant-numeric:tabular-nums;
+  min-width:48px;text-align:right;
+}
+.game-player .gp-status{
+  font-size:.65rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;padding:2px 6px;border-radius:3px;
+}
+.game-player .gp-actions{display:flex;gap:4px;}
+.game-player .gp-actions button{
+  padding:6px 10px;border-radius:4px;font-size:.7rem;font-weight:700;
+  min-height:36px;min-width:36px;text-transform:uppercase;
+}
+
+/* Sub alert */
+.sub-alert{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.85);padding:20px;
+}
+.sub-alert.active{display:flex;}
+.sub-alert-content{
+  background:var(--bg2);border:2px solid var(--yellow);
+  border-radius:var(--radius);padding:24px;text-align:center;
+  max-width:400px;width:100%;animation:alertPulse 1s ease infinite;
+}
+@keyframes alertPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(210,153,34,.4);}
+  50%{box-shadow:0 0 30px 10px rgba(210,153,34,.2);}
+}
+.sub-alert-content h2{font-size:1.4rem;margin-bottom:12px;color:var(--yellow);}
+.sub-alert-content .sub-detail{
+  font-size:1.1rem;margin-bottom:8px;
+}
+.sub-alert-content .sub-detail .arrow{color:var(--yellow);font-weight:700;margin:0 8px;}
+
+/* Halftime overlay */
+.halftime-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.9);padding:20px;
+}
+.halftime-overlay.active{display:flex;}
+.halftime-content{
+  background:var(--bg2);border:2px solid var(--blue);
+  border-radius:var(--radius);padding:32px;text-align:center;
+  max-width:400px;width:100%;
+}
+.halftime-content h2{font-size:1.8rem;color:var(--blue);margin-bottom:8px;}
+
+/* History */
+.history-game{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:12px;overflow:hidden;
+}
+.history-game-header{
+  padding:14px 16px;display:flex;justify-content:space-between;
+  align-items:center;cursor:pointer;min-height:52px;
+}
+.history-game-header:active{background:var(--bg3);}
+.history-game-body{padding:0 16px 14px;display:none;}
+.history-game-body.open{display:block;}
+.history-player-row{
+  display:flex;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid var(--border);font-size:.9rem;
+}
+.history-player-row:last-child{border-bottom:none;}
+
+/* Cumulative stats */
+.stats-table{width:100%;border-collapse:collapse;}
+.stats-table th{
+  text-align:left;padding:8px;font-size:.75rem;text-transform:uppercase;
+  color:var(--text3);border-bottom:1px solid var(--border);
+}
+.stats-table td{padding:8px;font-size:.9rem;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;}
+
+/* Tabs */
+.tab-bar{
+  display:flex;gap:0;background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:56px;z-index:50;
+}
+.tab-btn{
+  flex:1;padding:12px;text-align:center;font-size:.85rem;font-weight:600;
+  color:var(--text2);background:transparent;border-bottom:2px solid transparent;
+  min-height:44px;transition:all .15s;
+}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+.tab-btn:active{background:var(--bg3);}
+
+/* Auto schedule display */
+.schedule-item{
+  display:flex;align-items:center;padding:8px 10px;
+  background:var(--bg3);border-radius:var(--radius-sm);margin-bottom:4px;
+  font-size:.85rem;
+}
+.schedule-item .sched-time{
+  min-width:50px;font-weight:700;color:var(--purple);font-variant-numeric:tabular-nums;
+}
+.schedule-item .sched-arrow{color:var(--text3);margin:0 8px;}
+.schedule-item .sched-off{color:var(--red);}
+.schedule-item .sched-on{color:var(--green);}
+
+/* Goalie select */
+.goalie-select{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;
+}
+.goalie-opt{
+  padding:8px 14px;border-radius:var(--radius-sm);font-size:.85rem;
+  font-weight:600;background:var(--bg3);color:var(--text2);
+  border:1px solid var(--border);min-height:44px;
+  display:flex;align-items:center;transition:all .15s;
+}
+.goalie-opt.selected{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-border);}
+
+/* Empty states */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:12px;opacity:.5;}
+.empty-state p{font-size:.95rem;}
+
+/* Confirm dialog */
+.confirm-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.8);padding:20px;
+}
+.confirm-overlay.active{display:flex;}
+.confirm-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;max-width:360px;width:100%;text-align:center;
+}
+.confirm-box h3{margin-bottom:12px;}
+.confirm-box p{color:var(--text2);margin-bottom:20px;font-size:.9rem;}
+.confirm-box .confirm-actions{display:flex;gap:10px;}
+.confirm-box .confirm-actions button{flex:1;}
+
+/* Suggestion highlight */
+.suggested{animation:suggestPulse 1.5s ease infinite;}
+@keyframes suggestPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(88,166,255,.3);}
+  50%{box-shadow:0 0 12px 4px rgba(88,166,255,.2);}
+}
+
+/* Transition */
+.fade-enter{animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* Delete button on history */
+.history-delete{
+  color:var(--red);background:none;font-size:.8rem;padding:4px 8px;
+  border-radius:4px;min-height:36px;min-width:36px;
+}
+.history-delete:active{background:var(--red-bg);}
+</style>
+</head>
+<body>
+
+<!-- ========== SETUP SCREEN ========== -->
+<div id="screen-setup" class="screen active">
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <h1>SubTracker</h1>
+        <div class="subtitle">Soccer Substitution Manager</div>
+      </div>
+      <button class="header-btn" onclick="showScreen('history')">History</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Roster -->
+    <div class="card">
+      <div class="card-title">Team Roster</div>
+      <div class="form-row" style="margin-bottom:12px;">
+        <input type="text" id="newPlayerName" placeholder="Player name" maxlength="30"
+          onkeydown="if(event.key==='Enter')addPlayer()">
+        <button class="btn btn-primary btn-sm" onclick="addPlayer()" style="flex:0 0 auto;padding:10px 18px;">+ Add</button>
+      </div>
+      <div id="rosterList"></div>
+      <div id="rosterEmpty" class="empty-state" style="padding:20px;">
+        <p>No players yet. Add your team above.</p>
+      </div>
+    </div>
+
+    <!-- Game Config -->
+    <div class="card">
+      <div class="card-title">Game Settings</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Players on field</label>
+          <input type="number" id="cfgFieldPlayers" value="7" min="2" max="15">
+        </div>
+        <div class="form-group">
+          <label>Half length (min)</label>
+          <input type="number" id="cfgHalfLength" value="20" min="1" max="60">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Substitution Mode</label>
+        <div class="toggle-group">
+          <button class="toggle-opt active" data-mode="auto" onclick="setSubMode('auto')">Auto</button>
+          <button class="toggle-opt" data-mode="manual" onclick="setSubMode('manual')">Manual</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goalie Selection -->
+    <div class="card">
+      <div class="card-title">Goalie Assignment</div>
+      <div class="form-group">
+        <label>Half 1 Goalie</label>
+        <div id="goalie1Select" class="goalie-select"></div>
+      </div>
+      <div class="form-group">
+        <label>Half 2 Goalie</label>
+        <div id="goalie2Select" class="goalie-select"></div>
+      </div>
+    </div>
+
+    <!-- Start Game -->
+    <button id="btnStartGame" class="btn btn-primary btn-block" style="font-size:1.1rem;padding:16px;"
+      onclick="startGame()">Start Game</button>
+    <div id="startError" style="color:var(--red);text-align:center;margin-top:8px;font-size:.85rem;display:none;"></div>
+  </div>
+</div>
+
+<!-- ========== GAME SCREEN ========== -->
+<div id="screen-game" class="screen">
+  <div class="header" style="padding:12px 20px;">
+    <div class="header-row">
+      <button class="header-btn" onclick="confirmEndGame()" style="font-size:.8rem;">End Game</button>
+      <div style="text-align:center;">
+        <div class="half-label" id="gameHalfLabel">Half 1</div>
+      </div>
+      <div class="toggle-group" style="border:none;background:none;">
+        <button class="toggle-opt active" data-gmode="auto" onclick="toggleGameMode('auto')"
+          style="padding:6px 12px;font-size:.75rem;min-height:36px;border-radius:var(--radius-sm);">Auto</button>
+        <button class="toggle-opt" data-gmode="manual" onclick="toggleGameMode('manual')"
+          style="padding:6px 12px;font-size:.75rem;min-height:36px;border-radius:var(--radius-sm);">Manual</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Timer -->
+    <div class="game-timer">
+      <div class="timer-value" id="gameTimerValue">20:00</div>
+      <div class="timer-label" id="gameTimerLabel">Tap to start half</div>
+    </div>
+    <div id="gameTimerBtn" style="text-align:center;margin-bottom:12px;">
+      <button class="btn btn-primary" id="btnStartHalf" onclick="startHalf()">Start Half 1</button>
+    </div>
+
+    <!-- Sub timer (auto mode) -->
+    <div id="subTimerSection" class="sub-timer" style="display:none;">
+      <div class="sub-label">Next substitution in</div>
+      <div class="sub-time" id="subTimerValue">--:--</div>
+    </div>
+
+    <!-- Auto schedule preview -->
+    <div id="autoScheduleSection" style="display:none;">
+      <div class="card">
+        <div class="card-title">Rotation Schedule</div>
+        <div id="autoScheduleList"></div>
+      </div>
+    </div>
+
+    <!-- Player sections -->
+    <div class="field-section">
+      <div class="field-section-title">On Field <span class="count" id="fieldCount">0</span></div>
+      <div id="fieldPlayers"></div>
+    </div>
+    <div class="field-section" id="goalieSection">
+      <div class="field-section-title">Goalie</div>
+      <div id="goaliePlayers"></div>
+    </div>
+    <div class="field-section">
+      <div class="field-section-title">Bench <span class="count" id="benchCount">0</span></div>
+      <div id="benchPlayers"></div>
+    </div>
+    <div class="field-section" id="injuredSection" style="display:none;">
+      <div class="field-section-title">Injured</div>
+      <div id="injuredPlayers"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Sub Alert Overlay -->
+<div id="subAlert" class="sub-alert">
+  <div class="sub-alert-content">
+    <h2>Substitution Time!</h2>
+    <div id="subAlertDetails"></div>
+    <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="dismissSubAlert()">Got it!</button>
+  </div>
+</div>
+
+<!-- Halftime Overlay -->
+<div id="halftimeOverlay" class="halftime-overlay">
+  <div class="halftime-content">
+    <h2>Halftime</h2>
+    <p style="color:var(--text2);margin-bottom:20px;">Half 1 is complete. Review and start Half 2.</p>
+    <div id="halftimeSummary" style="margin-bottom:20px;"></div>
+    <button class="btn btn-primary btn-block" onclick="startSecondHalf()">Start Half 2</button>
+  </div>
+</div>
+
+<!-- Game Over Overlay -->
+<div id="gameOverOverlay" class="halftime-overlay">
+  <div class="halftime-content">
+    <h2 style="color:var(--green);">Game Over!</h2>
+    <div id="gameOverSummary" style="margin-bottom:20px;"></div>
+    <button class="btn btn-primary btn-block" onclick="finishGame()">Save &amp; Exit</button>
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirmAction">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== HISTORY SCREEN ========== -->
+<div id="screen-history" class="screen">
+  <div class="header">
+    <div class="header-row">
+      <button class="header-btn" onclick="showScreen('setup')">Back</button>
+      <h1>Game History</h1>
+      <div style="width:60px;"></div>
+    </div>
+  </div>
+  <div class="tab-bar" style="top:54px;">
+    <button class="tab-btn active" onclick="showHistoryTab('games',this)">Games</button>
+    <button class="tab-btn" onclick="showHistoryTab('cumulative',this)">Cumulative</button>
+  </div>
+  <div class="container">
+    <div id="historyGames"></div>
+    <div id="historyCumulative" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+let roster = JSON.parse(localStorage.getItem('st_roster') || '[]');
+let gameHistory = JSON.parse(localStorage.getItem('st_history') || '[]');
+let subMode = localStorage.getItem('st_subMode') || 'auto';
+let goalie1Id = null, goalie2Id = null;
+
+// Game state
+let game = null; // active game object
+let halfTimer = null; // interval for half countdown
+let timeTracker = null; // interval for tracking play time
+let subSchedule = []; // auto mode schedule
+let nextSubIndex = 0;
+
+// ==================== AUDIO ====================
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playBeep(freq = 880, duration = 0.15, count = 3) {
+  try {
+    const ctx = getAudioCtx();
+    for (let i = 0; i < count; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.25 + duration);
+      osc.start(ctx.currentTime + i * 0.25);
+      osc.stop(ctx.currentTime + i * 0.25 + duration);
+    }
+  } catch(e) {}
+}
+function vibrate(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {}
+}
+
+// ==================== HELPERS ====================
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function fmt(secs) {
+  const m = Math.floor(Math.abs(secs) / 60);
+  const s = Math.abs(secs) % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+function saveRoster() { localStorage.setItem('st_roster', JSON.stringify(roster)); }
+function saveHistory() { localStorage.setItem('st_history', JSON.stringify(gameHistory)); }
+
+// ==================== SCREEN NAV ====================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'setup') renderSetup();
+  if (name === 'history') renderHistory();
+}
+
+// ==================== SETUP SCREEN ====================
+function renderSetup() {
+  renderRoster();
+  renderGoalieSelects();
+  // Restore config
+  const cfg = JSON.parse(localStorage.getItem('st_config') || '{}');
+  if (cfg.fieldPlayers) document.getElementById('cfgFieldPlayers').value = cfg.fieldPlayers;
+  if (cfg.halfLength) document.getElementById('cfgHalfLength').value = cfg.halfLength;
+  setSubMode(subMode);
+}
+
+function renderRoster() {
+  const list = document.getElementById('rosterList');
+  const empty = document.getElementById('rosterEmpty');
+  if (roster.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = roster.map(p => `
+    <div class="player-item fade-enter">
+      <div class="name">${esc(p.name)}</div>
+      <span class="player-badge ${p.available ? 'badge-available' : 'badge-unavailable'}"
+        onclick="toggleAvailable('${p.id}')" style="cursor:pointer;">
+        ${p.available ? 'Available' : 'Out'}
+      </span>
+      <button class="icon-btn danger" onclick="removePlayer('${p.id}')" title="Remove">&#x2715;</button>
+    </div>
+  `).join('');
+}
+
+function addPlayer() {
+  const input = document.getElementById('newPlayerName');
+  const name = input.value.trim();
+  if (!name) return;
+  roster.push({ id: uid(), name, available: true });
+  input.value = '';
+  saveRoster();
+  renderRoster();
+  renderGoalieSelects();
+}
+
+function removePlayer(id) {
+  roster = roster.filter(p => p.id !== id);
+  if (goalie1Id === id) goalie1Id = null;
+  if (goalie2Id === id) goalie2Id = null;
+  saveRoster();
+  renderRoster();
+  renderGoalieSelects();
+}
+
+function toggleAvailable(id) {
+  const p = roster.find(x => x.id === id);
+  if (p) p.available = !p.available;
+  if (!p.available) {
+    if (goalie1Id === id) goalie1Id = null;
+    if (goalie2Id === id) goalie2Id = null;
+  }
+  saveRoster();
+  renderRoster();
+  renderGoalieSelects();
+}
+
+function renderGoalieSelects() {
+  const avail = roster.filter(p => p.available);
+  ['goalie1Select', 'goalie2Select'].forEach((elId, idx) => {
+    const selId = idx === 0 ? goalie1Id : goalie2Id;
+    document.getElementById(elId).innerHTML = avail.length === 0
+      ? '<span style="color:var(--text3);font-size:.85rem;">No available players</span>'
+      : avail.map(p => `
+        <button class="goalie-opt ${p.id === selId ? 'selected' : ''}"
+          onclick="selectGoalie(${idx + 1},'${p.id}')">${esc(p.name)}</button>
+      `).join('');
+  });
+}
+
+function selectGoalie(half, id) {
+  if (half === 1) goalie1Id = goalie1Id === id ? null : id;
+  else goalie2Id = goalie2Id === id ? null : id;
+  renderGoalieSelects();
+}
+
+function setSubMode(mode) {
+  subMode = mode;
+  localStorage.setItem('st_subMode', mode);
+  document.querySelectorAll('.toggle-group .toggle-opt[data-mode]').forEach(el => {
+    el.classList.toggle('active', el.dataset.mode === mode);
+  });
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ==================== START GAME ====================
+function startGame() {
+  const available = roster.filter(p => p.available);
+  const fieldPlayers = parseInt(document.getElementById('cfgFieldPlayers').value) || 7;
+  const halfLength = parseInt(document.getElementById('cfgHalfLength').value) || 20;
+  const errEl = document.getElementById('startError');
+
+  // Validate
+  if (available.length < fieldPlayers) {
+    errEl.textContent = `Need at least ${fieldPlayers} available players (have ${available.length}).`;
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!goalie1Id || !goalie2Id) {
+    errEl.textContent = 'Please select goalies for both halves.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (goalie1Id === goalie2Id) {
+    errEl.textContent = 'Goalies for each half should be different players.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  // Save config
+  localStorage.setItem('st_config', JSON.stringify({ fieldPlayers, halfLength }));
+
+  // Initialize game
+  game = {
+    id: uid(),
+    date: new Date().toISOString(),
+    fieldPlayers,
+    halfLengthSecs: halfLength * 60,
+    subMode,
+    half: 1,
+    halfRunning: false,
+    halfRemaining: halfLength * 60,
+    goalie1Id,
+    goalie2Id,
+    players: available.map(p => ({
+      id: p.id,
+      name: p.name,
+      status: 'bench', // bench, field, goalie, injured
+      fieldTime: 0, // accumulated seconds on field (not goalie)
+      goalieTime: 0,
+      lastOnFieldAt: null,
+    })),
+  };
+
+  // Assign initial positions for Half 1
+  assignHalfPositions(1);
+
+  showScreen('game');
+  renderGame();
+}
+
+function assignHalfPositions(half) {
+  const goalieId = half === 1 ? game.goalie1Id : game.goalie2Id;
+  // Reset all to bench
+  game.players.forEach(p => {
+    if (p.status !== 'injured') {
+      p.status = 'bench';
+      p.lastOnFieldAt = null;
+    }
+  });
+  // Set goalie
+  const gk = game.players.find(p => p.id === goalieId);
+  if (gk && gk.status !== 'injured') gk.status = 'goalie';
+
+  // Pick field players: those with least field time first (excluding goalie + injured)
+  const candidates = game.players
+    .filter(p => p.status === 'bench')
+    .sort((a, b) => a.fieldTime - b.fieldTime);
+  const slotsNeeded = game.fieldPlayers - 1; // minus goalie
+  candidates.slice(0, slotsNeeded).forEach(p => { p.status = 'field'; });
+}
+
+// ==================== GAME RENDERING ====================
+function renderGame() {
+  if (!game) return;
+  // Half label
+  document.getElementById('gameHalfLabel').textContent =
+    game.half === 1 ? 'Half 1' : 'Half 2';
+
+  // Timer
+  document.getElementById('gameTimerValue').textContent = fmt(game.halfRemaining);
+  const label = document.getElementById('gameTimerLabel');
+  const btn = document.getElementById('btnStartHalf');
+  if (!game.halfRunning) {
+    label.textContent = game.half === 1 && game.halfRemaining === game.halfLengthSecs
+      ? 'Tap to start half' : 'Paused';
+    btn.textContent = game.halfRunning ? '' : `Start Half ${game.half}`;
+    btn.style.display = '';
+  } else {
+    label.textContent = 'Remaining';
+    btn.style.display = 'none';
+  }
+
+  // Mode toggle
+  document.querySelectorAll('[data-gmode]').forEach(el => {
+    el.classList.toggle('active', el.dataset.gmode === game.subMode);
+  });
+
+  // Sub timer
+  const stSec = document.getElementById('subTimerSection');
+  if (game.subMode === 'auto' && game.halfRunning && subSchedule.length > nextSubIndex) {
+    stSec.style.display = '';
+  } else {
+    stSec.style.display = 'none';
+  }
+
+  // Auto schedule
+  const asSec = document.getElementById('autoScheduleSection');
+  if (game.subMode === 'auto' && subSchedule.length > 0) {
+    asSec.style.display = '';
+    renderAutoSchedule();
+  } else {
+    asSec.style.display = 'none';
+  }
+
+  // Players
+  renderGamePlayers();
+}
+
+function renderGamePlayers() {
+  const field = game.players.filter(p => p.status === 'field');
+  const bench = game.players.filter(p => p.status === 'bench');
+  const injured = game.players.filter(p => p.status === 'injured');
+  const goalies = game.players.filter(p => p.status === 'goalie');
+
+  document.getElementById('fieldCount').textContent = field.length;
+  document.getElementById('benchCount').textContent = bench.length;
+
+  // Sort bench by least time
+  bench.sort((a, b) => a.fieldTime - b.fieldTime);
+
+  document.getElementById('fieldPlayers').innerHTML = field.map(p => playerCard(p, 'on-field')).join('');
+  document.getElementById('goaliePlayers').innerHTML = goalies.map(p => playerCard(p, 'goalie')).join('');
+  document.getElementById('benchPlayers').innerHTML = bench.map((p, i) => playerCard(p, 'on-bench', i === 0)).join('');
+
+  const injSec = document.getElementById('injuredSection');
+  if (injured.length > 0) {
+    injSec.style.display = '';
+    document.getElementById('injuredPlayers').innerHTML = injured.map(p => playerCard(p, 'injured')).join('');
+  } else {
+    injSec.style.display = 'none';
+  }
+}
+
+function playerCard(p, cls, suggested = false) {
+  const time = fmt(p.fieldTime);
+  let actions = '';
+
+  if (game.subMode === 'manual' || game.halfRunning) {
+    if (p.status === 'field') {
+      actions = `
+        <button class="btn btn-sm btn-secondary" onclick="manualSubOff('${p.id}')">Bench</button>
+        <button class="btn btn-sm btn-danger" onclick="injurePlayer('${p.id}')" style="padding:8px;">Injured</button>
+      `;
+    } else if (p.status === 'bench' && game.halfRunning) {
+      actions = `<button class="btn btn-sm btn-primary" onclick="manualSubOn('${p.id}')">Sub In</button>`;
+    } else if (p.status === 'injured') {
+      actions = `<button class="btn btn-sm btn-secondary" onclick="recoverPlayer('${p.id}')">Recover</button>`;
+    }
+  }
+
+  return `
+    <div class="game-player ${cls} ${suggested ? 'suggested' : ''} fade-enter">
+      <div class="gp-name">${esc(p.name)}</div>
+      <div class="gp-time">${time}</div>
+      <div class="gp-actions">${actions}</div>
+    </div>
+  `;
+}
+
+function renderAutoSchedule() {
+  const list = document.getElementById('autoScheduleList');
+  list.innerHTML = subSchedule.map((ev, i) => {
+    const done = i < nextSubIndex;
+    const current = i === nextSubIndex && game.halfRunning;
+    return `
+      <div class="schedule-item" style="${done ? 'opacity:.4;' : ''} ${current ? 'border:1px solid var(--purple);' : ''}">
+        <span class="sched-time">${fmt(ev.atRemaining)}</span>
+        <span class="sched-off">${esc(ev.offName)}</span>
+        <span class="sched-arrow">&#8594;</span>
+        <span class="sched-on">${esc(ev.onName)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==================== GAME TIMER ====================
+function startHalf() {
+  if (!game || game.halfRunning) return;
+  // Resume audio context (requires user gesture)
+  try { getAudioCtx().resume(); } catch(e) {}
+
+  game.halfRunning = true;
+
+  // Mark field players and goalie as "on since now"
+  const now = Date.now();
+  game.players.forEach(p => {
+    if (p.status === 'field' || p.status === 'goalie') p.lastOnFieldAt = now;
+  });
+
+  // Generate auto schedule
+  if (game.subMode === 'auto') {
+    generateAutoSchedule();
+  }
+
+  // Start the half timer
+  halfTimer = setInterval(tickHalf, 1000);
+  timeTracker = setInterval(trackTime, 1000);
+
+  document.getElementById('btnStartHalf').style.display = 'none';
+  renderGame();
+}
+
+function tickHalf() {
+  if (!game || !game.halfRunning) return;
+  game.halfRemaining--;
+
+  document.getElementById('gameTimerValue').textContent = fmt(Math.max(0, game.halfRemaining));
+
+  // Check auto subs
+  if (game.subMode === 'auto' && nextSubIndex < subSchedule.length) {
+    const ev = subSchedule[nextSubIndex];
+    if (game.halfRemaining <= ev.atRemaining) {
+      executeAutoSub(ev);
+      nextSubIndex++;
+    }
+    // Update sub timer
+    if (nextSubIndex < subSchedule.length) {
+      const nextEv = subSchedule[nextSubIndex];
+      const secsUntil = game.halfRemaining - nextEv.atRemaining;
+      document.getElementById('subTimerValue').textContent = fmt(Math.max(0, secsUntil));
+    }
+  }
+  if (nextSubIndex >= subSchedule.length) {
+    document.getElementById('subTimerSection').style.display = 'none';
+  }
+
+  // Half ended
+  if (game.halfRemaining <= 0) {
+    endHalf();
+  }
+}
+
+function trackTime() {
+  if (!game || !game.halfRunning) return;
+  const now = Date.now();
+  game.players.forEach(p => {
+    if (p.status === 'field' && p.lastOnFieldAt) {
+      const elapsed = Math.round((now - p.lastOnFieldAt) / 1000);
+      p.fieldTime += elapsed;
+      p.lastOnFieldAt = now;
+    } else if (p.status === 'goalie' && p.lastOnFieldAt) {
+      const elapsed = Math.round((now - p.lastOnFieldAt) / 1000);
+      p.goalieTime += elapsed;
+      p.lastOnFieldAt = now;
+    }
+  });
+  renderGamePlayers();
+}
+
+function endHalf() {
+  game.halfRunning = false;
+  clearInterval(halfTimer);
+  clearInterval(timeTracker);
+  halfTimer = null;
+  timeTracker = null;
+
+  // Final time flush
+  flushTime();
+
+  if (game.half === 1) {
+    showHalftime();
+  } else {
+    showGameOver();
+  }
+}
+
+function flushTime() {
+  const now = Date.now();
+  game.players.forEach(p => {
+    if (p.status === 'field' && p.lastOnFieldAt) {
+      p.fieldTime += Math.round((now - p.lastOnFieldAt) / 1000);
+      p.lastOnFieldAt = null;
+    } else if (p.status === 'goalie' && p.lastOnFieldAt) {
+      p.goalieTime += Math.round((now - p.lastOnFieldAt) / 1000);
+      p.lastOnFieldAt = null;
+    }
+  });
+}
+
+// ==================== AUTO SCHEDULE ====================
+function generateAutoSchedule() {
+  subSchedule = [];
+  nextSubIndex = 0;
+
+  const bench = game.players.filter(p => p.status === 'bench');
+  const field = game.players.filter(p => p.status === 'field');
+
+  if (bench.length === 0) return; // Everyone is on field
+
+  const totalPlayers = field.length + bench.length; // excluding goalie & injured
+  const halfSecs = game.halfRemaining;
+
+  // Each player should play: (fieldSlots / totalPlayers) * halfSecs
+  // Number of rotation slots = how many times we need to sub
+  // Interval between subs = halfSecs / (number of sub events)
+  // We want each bench player to get on, and each field player to get a break
+
+  // Simple round-robin: cycle bench players in at equal intervals
+  const numSubs = bench.length; // at minimum, each bench player gets on once
+  // But we might want more rotations so everyone gets equal time
+  // Total sub events needed for full fairness: enough so each player plays roughly equal
+  // Simple approach: fieldSlots * rotations where rotations makes it even
+
+  // Calculate how many total "slots" of time we have
+  const fieldSlots = field.length;
+  // Fair time per player
+  const fairTime = (fieldSlots * halfSecs) / totalPlayers;
+  // Interval = fairTime (each player gets this long before a rotation)
+  const interval = Math.max(30, Math.floor(fairTime)); // at least 30 seconds
+
+  // Generate sub events
+  let currentField = [...field];
+  let currentBench = [...bench].sort((a, b) => a.fieldTime - b.fieldTime);
+  let timePoint = halfSecs - interval;
+
+  while (timePoint > 15 && currentBench.length > 0) {
+    // Sub off the player with most accumulated time on field
+    const offPlayer = currentField.sort((a, b) => {
+      // Add approximate current half time
+      const aTime = a.fieldTime + (halfSecs - timePoint);
+      const bTime = b.fieldTime + (halfSecs - timePoint);
+      return bTime - aTime;
+    })[0];
+
+    // Sub on the player with least time
+    const onPlayer = currentBench[0];
+
+    if (offPlayer && onPlayer) {
+      subSchedule.push({
+        atRemaining: Math.max(0, timePoint),
+        offId: offPlayer.id,
+        offName: offPlayer.name,
+        onId: onPlayer.id,
+        onName: onPlayer.name,
+      });
+
+      // Swap in arrays
+      currentField = currentField.filter(p => p.id !== offPlayer.id);
+      currentField.push(onPlayer);
+      currentBench = currentBench.filter(p => p.id !== onPlayer.id);
+      currentBench.push(offPlayer);
+      currentBench.sort((a, b) => a.fieldTime - b.fieldTime);
+    }
+
+    timePoint -= interval;
+  }
+}
+
+function executeAutoSub(ev) {
+  const offP = game.players.find(p => p.id === ev.offId);
+  const onP = game.players.find(p => p.id === ev.onId);
+
+  if (!offP || !onP) return;
+  if (offP.status !== 'field' || onP.status !== 'bench') return;
+
+  // Flush time for the player coming off
+  const now = Date.now();
+  if (offP.lastOnFieldAt) {
+    offP.fieldTime += Math.round((now - offP.lastOnFieldAt) / 1000);
+    offP.lastOnFieldAt = null;
+  }
+
+  offP.status = 'bench';
+  onP.status = 'field';
+  onP.lastOnFieldAt = now;
+
+  // Alert
+  showSubAlert(offP.name, onP.name);
+  playBeep(880, 0.15, 3);
+  vibrate([200, 100, 200, 100, 200]);
+
+  renderGame();
+}
+
+// ==================== MANUAL SUBS ====================
+function manualSubOff(id) {
+  if (!game || !game.halfRunning) return;
+  const p = game.players.find(x => x.id === id);
+  if (!p || p.status !== 'field') return;
+
+  const now = Date.now();
+  if (p.lastOnFieldAt) {
+    p.fieldTime += Math.round((now - p.lastOnFieldAt) / 1000);
+    p.lastOnFieldAt = null;
+  }
+  p.status = 'bench';
+  renderGamePlayers();
+}
+
+function manualSubOn(id) {
+  if (!game || !game.halfRunning) return;
+  const p = game.players.find(x => x.id === id);
+  if (!p || p.status !== 'bench') return;
+
+  // Check if there's room on the field
+  const onField = game.players.filter(x => x.status === 'field').length;
+  const goalies = game.players.filter(x => x.status === 'goalie').length;
+  if (onField + goalies >= game.fieldPlayers) {
+    // Need to sub someone off first - just put them on anyway (manual mode flexibility)
+  }
+
+  p.status = 'field';
+  p.lastOnFieldAt = Date.now();
+  renderGamePlayers();
+}
+
+function injurePlayer(id) {
+  if (!game) return;
+  const p = game.players.find(x => x.id === id);
+  if (!p || (p.status !== 'field' && p.status !== 'goalie')) return;
+
+  const now = Date.now();
+  if (p.lastOnFieldAt) {
+    if (p.status === 'field') {
+      p.fieldTime += Math.round((now - p.lastOnFieldAt) / 1000);
+    } else {
+      p.goalieTime += Math.round((now - p.lastOnFieldAt) / 1000);
+    }
+    p.lastOnFieldAt = null;
+  }
+  p.status = 'injured';
+
+  // Suggest replacement
+  const bench = game.players.filter(x => x.status === 'bench').sort((a, b) => a.fieldTime - b.fieldTime);
+  if (bench.length > 0 && game.halfRunning) {
+    const repl = bench[0];
+    repl.status = 'field';
+    repl.lastOnFieldAt = Date.now();
+    playBeep(660, 0.2, 2);
+    vibrate([200, 100, 200]);
+    showSubAlert(p.name + ' (injured)', repl.name);
+  }
+
+  renderGame();
+}
+
+function recoverPlayer(id) {
+  if (!game) return;
+  const p = game.players.find(x => x.id === id);
+  if (!p || p.status !== 'injured') return;
+  p.status = 'bench';
+  renderGame();
+}
+
+// ==================== ALERTS ====================
+function showSubAlert(offName, onName) {
+  const el = document.getElementById('subAlert');
+  document.getElementById('subAlertDetails').innerHTML = `
+    <div class="sub-detail"><span class="sched-off">${esc(offName)}</span><span class="arrow">&#8594;</span><span class="sched-on">${esc(onName)}</span></div>
+  `;
+  el.classList.add('active');
+}
+
+function dismissSubAlert() {
+  document.getElementById('subAlert').classList.remove('active');
+}
+
+// ==================== HALFTIME ====================
+function showHalftime() {
+  const summary = game.players
+    .sort((a, b) => b.fieldTime - a.fieldTime)
+    .map(p => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.9rem;">
+      <span>${esc(p.name)}</span><span style="color:var(--text2);">${fmt(p.fieldTime)}</span>
+    </div>`).join('');
+  document.getElementById('halftimeSummary').innerHTML = summary;
+  document.getElementById('halftimeOverlay').classList.add('active');
+}
+
+function startSecondHalf() {
+  document.getElementById('halftimeOverlay').classList.remove('active');
+  game.half = 2;
+  game.halfRemaining = game.halfLengthSecs;
+  game.halfRunning = false;
+  subSchedule = [];
+  nextSubIndex = 0;
+
+  assignHalfPositions(2);
+
+  // Re-mark goalie with timestamp
+  const gk = game.players.find(p => p.status === 'goalie');
+  if (gk) gk.lastOnFieldAt = null;
+
+  renderGame();
+}
+
+// ==================== GAME OVER ====================
+function showGameOver() {
+  const summary = game.players
+    .sort((a, b) => b.fieldTime - a.fieldTime)
+    .map(p => {
+      const goalieStr = p.goalieTime > 0 ? ` <span style="color:var(--yellow);font-size:.75rem;">(GK ${fmt(p.goalieTime)})</span>` : '';
+      return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.9rem;">
+        <span>${esc(p.name)}${goalieStr}</span><span style="color:var(--green);">${fmt(p.fieldTime)}</span>
+      </div>`;
+    }).join('');
+  document.getElementById('gameOverSummary').innerHTML = summary;
+  document.getElementById('gameOverOverlay').classList.add('active');
+}
+
+function finishGame() {
+  document.getElementById('gameOverOverlay').classList.remove('active');
+
+  // Save to history
+  const record = {
+    id: game.id,
+    date: game.date,
+    fieldPlayers: game.fieldPlayers,
+    halfLengthSecs: game.halfLengthSecs,
+    players: game.players.map(p => ({
+      id: p.id, name: p.name,
+      fieldTime: p.fieldTime, goalieTime: p.goalieTime,
+    })),
+  };
+  gameHistory.unshift(record);
+  saveHistory();
+
+  game = null;
+  showScreen('setup');
+}
+
+function confirmEndGame() {
+  showConfirm('End Game?', 'This will end the current game. Unsaved progress will be lost.', () => {
+    clearInterval(halfTimer);
+    clearInterval(timeTracker);
+    flushTime();
+    showGameOver();
+  });
+}
+
+function toggleGameMode(mode) {
+  if (!game) return;
+  game.subMode = mode;
+  if (mode === 'auto' && game.halfRunning && subSchedule.length === 0) {
+    generateAutoSchedule();
+  }
+  renderGame();
+}
+
+// ==================== CONFIRM DIALOG ====================
+let confirmCallback = null;
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  confirmCallback = cb;
+  document.getElementById('confirmAction').onclick = () => { closeConfirm(); if (confirmCallback) confirmCallback(); };
+  document.getElementById('confirmOverlay').classList.add('active');
+}
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('active');
+  confirmCallback = null;
+}
+
+// ==================== HISTORY SCREEN ====================
+function renderHistory() {
+  renderHistoryGames();
+  renderCumulativeStats();
+}
+
+function showHistoryTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('historyGames').style.display = tab === 'games' ? '' : 'none';
+  document.getElementById('historyCumulative').style.display = tab === 'cumulative' ? '' : 'none';
+}
+
+function renderHistoryGames() {
+  const el = document.getElementById('historyGames');
+  if (gameHistory.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9917;</div><p>No games yet. Play your first game!</p></div>';
+    return;
+  }
+  el.innerHTML = gameHistory.map((g, i) => {
+    const d = new Date(g.date);
+    const dateStr = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const maxTime = Math.max(...g.players.map(p => p.fieldTime));
+    const minTime = Math.min(...g.players.map(p => p.fieldTime));
+    return `
+      <div class="history-game">
+        <div class="history-game-header" onclick="toggleHistoryGame(${i})">
+          <div>
+            <div style="font-weight:700;font-size:.95rem;">${dateStr}</div>
+            <div style="color:var(--text3);font-size:.8rem;">${g.players.length} players &middot; ${fmt(g.halfLengthSecs)} halves</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="text-align:right;">
+              <div style="font-size:.75rem;color:var(--text3);">Spread</div>
+              <div style="font-size:.85rem;font-weight:600;color:${maxTime - minTime < 120 ? 'var(--green)' : 'var(--yellow)'};">${fmt(maxTime - minTime)}</div>
+            </div>
+            <button class="history-delete" onclick="event.stopPropagation();deleteGame(${i})" title="Delete">&#x2715;</button>
+          </div>
+        </div>
+        <div class="history-game-body" id="histBody${i}">
+          ${g.players.sort((a, b) => b.fieldTime - a.fieldTime).map(p => `
+            <div class="history-player-row">
+              <span>${esc(p.name)}${p.goalieTime > 0 ? ' <span style="color:var(--yellow);font-size:.75rem;">GK</span>' : ''}</span>
+              <span style="font-weight:600;">${fmt(p.fieldTime)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleHistoryGame(i) {
+  const body = document.getElementById('histBody' + i);
+  body.classList.toggle('open');
+}
+
+function deleteGame(i) {
+  showConfirm('Delete Game?', 'This cannot be undone.', () => {
+    gameHistory.splice(i, 1);
+    saveHistory();
+    renderHistory();
+  });
+}
+
+function renderCumulativeStats() {
+  const el = document.getElementById('historyCumulative');
+  if (gameHistory.length === 0) {
+    el.innerHTML = '<div class="empty-state"><p>No data yet.</p></div>';
+    return;
+  }
+  // Aggregate
+  const stats = {};
+  gameHistory.forEach(g => {
+    g.players.forEach(p => {
+      if (!stats[p.name]) stats[p.name] = { name: p.name, totalField: 0, totalGoalie: 0, games: 0 };
+      stats[p.name].totalField += p.fieldTime;
+      stats[p.name].totalGoalie += p.goalieTime;
+      stats[p.name].games++;
+    });
+  });
+  const rows = Object.values(stats).sort((a, b) => b.totalField - a.totalField);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Cumulative Playing Time</div>
+      <table class="stats-table">
+        <thead><tr><th>Player</th><th>Games</th><th>Field</th><th>Goalie</th><th>Avg/Game</th></tr></thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td style="font-weight:600;">${esc(r.name)}</td>
+              <td>${r.games}</td>
+              <td>${fmt(r.totalField)}</td>
+              <td>${r.totalGoalie > 0 ? fmt(r.totalGoalie) : '-'}</td>
+              <td>${fmt(Math.round(r.totalField / r.games))}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ==================== INIT ====================
+renderSetup();
+</script>
+</body>
+</html>
