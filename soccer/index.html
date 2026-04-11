@@ -131,7 +131,11 @@ input:focus,select:focus{border-color:var(--blue);}
 
 /* Game screen */
 .game-timer{
-  text-align:center;padding:20px 0;
+  text-align:center;padding:20px 0 8px;
+}
+.game-timer .half-indicator{
+  font-size:1.3rem;font-weight:800;color:var(--blue);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;
 }
 .game-timer .timer-value{
   font-size:4rem;font-weight:800;font-variant-numeric:tabular-nums;
@@ -140,9 +144,6 @@ input:focus,select:focus{border-color:var(--blue);}
 .game-timer .timer-label{
   font-size:.85rem;color:var(--text2);margin-top:4px;font-weight:600;
   text-transform:uppercase;letter-spacing:.05em;
-}
-.game-timer .half-label{
-  font-size:1.1rem;font-weight:700;color:var(--blue);margin-bottom:4px;
 }
 .sub-timer{
   text-align:center;padding:8px;margin:8px 0;border-radius:var(--radius-sm);
@@ -170,6 +171,7 @@ input:focus,select:focus{border-color:var(--blue);}
 .game-player.on-bench{background:var(--bg3);border:1px solid var(--border);}
 .game-player.injured{background:var(--red-bg);border:1px solid var(--red-border);}
 .game-player.goalie{background:var(--yellow-bg);border:1px solid var(--yellow-border);}
+.game-player.selected-for-sub{border:2px solid var(--blue);box-shadow:0 0 8px rgba(88,166,255,.3);}
 .game-player .gp-name{flex:1;font-weight:700;font-size:.95rem;}
 .game-player .gp-time{
   font-size:.85rem;font-weight:600;font-variant-numeric:tabular-nums;
@@ -203,15 +205,17 @@ input:focus,select:focus{border-color:var(--blue);}
 }
 .sub-alert-content h2{font-size:1.4rem;margin-bottom:12px;color:var(--yellow);}
 .sub-alert-content .sub-detail{
-  font-size:1.1rem;margin-bottom:8px;
+  font-size:1rem;margin-bottom:6px;padding:6px 0;
+  border-bottom:1px solid var(--border);
 }
+.sub-alert-content .sub-detail:last-of-type{border-bottom:none;}
 .sub-alert-content .sub-detail .arrow{color:var(--yellow);font-weight:700;margin:0 8px;}
 
 /* Halftime overlay */
 .halftime-overlay{
   position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;
   display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.9);padding:20px;
+  background:rgba(0,0,0,.9);padding:20px;overflow-y:auto;
 }
 .halftime-overlay.active{display:flex;}
 .halftime-content{
@@ -262,14 +266,17 @@ input:focus,select:focus{border-color:var(--blue);}
 
 /* Auto schedule display */
 .schedule-item{
-  display:flex;align-items:center;padding:8px 10px;
+  display:flex;align-items:flex-start;padding:8px 10px;
   background:var(--bg3);border-radius:var(--radius-sm);margin-bottom:4px;
-  font-size:.85rem;
+  font-size:.85rem;gap:8px;
 }
 .schedule-item .sched-time{
-  min-width:50px;font-weight:700;color:var(--purple);font-variant-numeric:tabular-nums;
+  min-width:55px;font-weight:700;color:var(--purple);font-variant-numeric:tabular-nums;
+  flex-shrink:0;
 }
-.schedule-item .sched-arrow{color:var(--text3);margin:0 8px;}
+.schedule-item .sched-pairs{flex:1;}
+.schedule-item .sched-pair{margin-bottom:2px;}
+.schedule-item .sched-arrow{color:var(--text3);margin:0 4px;}
 .schedule-item .sched-off{color:var(--red);}
 .schedule-item .sched-on{color:var(--green);}
 
@@ -313,7 +320,14 @@ input:focus,select:focus{border-color:var(--blue);}
   50%{box-shadow:0 0 12px 4px rgba(88,166,255,.2);}
 }
 
-/* Transition */
+/* Due-for-sub pulsing border */
+.due-for-sub{animation:duePulse 2s ease infinite;}
+@keyframes duePulse{
+  0%,100%{box-shadow:inset 0 0 0 2px rgba(210,168,255,.2);}
+  50%{box-shadow:inset 0 0 0 2px rgba(210,168,255,.6);}
+}
+
+/* Fade transition for initial creation only */
 .fade-enter{animation:fadeIn .2s ease;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
@@ -323,6 +337,118 @@ input:focus,select:focus{border-color:var(--blue);}
   border-radius:4px;min-height:36px;min-width:36px;
 }
 .history-delete:active{background:var(--red-bg);}
+
+/* ========== PITCH VISUALIZATION ========== */
+.pitch-container{margin-bottom:16px;}
+.pitch{
+  background:#2d5a1d;
+  border:2px solid rgba(255,255,255,.7);
+  border-radius:4px;
+  position:relative;
+  width:100%;
+  aspect-ratio:3/4;
+  overflow:hidden;
+}
+/* Halfway line */
+.pitch-half-line{
+  position:absolute;top:50%;left:0;right:0;
+  height:0;border-top:2px solid rgba(255,255,255,.5);
+}
+/* Center circle */
+.pitch-center-circle{
+  position:absolute;top:50%;left:50%;
+  width:22%;aspect-ratio:1;
+  border:2px solid rgba(255,255,255,.5);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+/* Center dot */
+.pitch-center-dot{
+  position:absolute;top:50%;left:50%;
+  width:6px;height:6px;
+  background:rgba(255,255,255,.6);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+/* Penalty area top (opponent) */
+.pitch-penalty-top{
+  position:absolute;top:0;left:20%;right:20%;
+  height:18%;
+  border:2px solid rgba(255,255,255,.5);
+  border-top:none;
+}
+/* Goal area top */
+.pitch-goal-top{
+  position:absolute;top:0;left:32%;right:32%;
+  height:8%;
+  border:2px solid rgba(255,255,255,.5);
+  border-top:none;
+}
+/* Penalty area bottom (our team) */
+.pitch-penalty-bottom{
+  position:absolute;bottom:0;left:20%;right:20%;
+  height:18%;
+  border:2px solid rgba(255,255,255,.5);
+  border-bottom:none;
+}
+/* Goal area bottom */
+.pitch-goal-bottom{
+  position:absolute;bottom:0;left:32%;right:32%;
+  height:8%;
+  border:2px solid rgba(255,255,255,.5);
+  border-bottom:none;
+}
+/* Goal lines */
+.pitch-goal-net-top{
+  position:absolute;top:-2px;left:40%;right:40%;
+  height:4px;background:rgba(255,255,255,.7);
+}
+.pitch-goal-net-bottom{
+  position:absolute;bottom:-2px;left:40%;right:40%;
+  height:4px;background:rgba(255,255,255,.7);
+}
+
+/* Player dots on pitch */
+.pitch-player{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  width:42px;height:42px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.6rem;font-weight:700;
+  color:#000;
+  text-align:center;
+  line-height:1.1;
+  z-index:2;
+  transition:left .5s ease, top .5s ease;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding:2px;
+}
+.pitch-player.field-dot{background:var(--green);border:2px solid #2ea043;}
+.pitch-player.goalie-dot{background:var(--yellow);border:2px solid #b88a1a;}
+.pitch-player.due-soon{border:3px solid var(--purple);box-shadow:0 0 8px rgba(210,168,255,.6);}
+
+/* Formation selector */
+.formation-select{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.formation-opt{
+  padding:8px 14px;border-radius:var(--radius-sm);font-size:.85rem;
+  font-weight:600;background:var(--bg3);color:var(--text2);
+  border:1px solid var(--border);min-height:44px;
+  display:flex;align-items:center;transition:all .15s;
+}
+.formation-opt.selected{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border);}
+
+/* Manual multi-sub bar */
+.multi-sub-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:2px solid var(--blue);
+  padding:12px 16px;z-index:90;
+  display:none;text-align:center;
+}
+.multi-sub-bar.active{display:block;}
+.multi-sub-bar .msb-info{font-size:.85rem;color:var(--text2);margin-bottom:8px;}
+.multi-sub-bar .msb-actions{display:flex;gap:10px;justify-content:center;}
 </style>
 </head>
 <body>
@@ -367,11 +493,17 @@ input:focus,select:focus{border-color:var(--blue);}
           <input type="number" id="cfgHalfLength" value="20" min="1" max="60">
         </div>
       </div>
-      <div class="form-group">
-        <label>Substitution Mode</label>
-        <div class="toggle-group">
-          <button class="toggle-opt active" data-mode="auto" onclick="setSubMode('auto')">Auto</button>
-          <button class="toggle-opt" data-mode="manual" onclick="setSubMode('manual')">Manual</button>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Substitution Mode</label>
+          <div class="toggle-group">
+            <button class="toggle-opt active" data-mode="auto" onclick="setSubMode('auto')">Auto</button>
+            <button class="toggle-opt" data-mode="manual" onclick="setSubMode('manual')">Manual</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Subs per rotation</label>
+          <input type="number" id="cfgSubsPerRotation" value="2" min="1" max="6">
         </div>
       </div>
     </div>
@@ -389,6 +521,26 @@ input:focus,select:focus{border-color:var(--blue);}
       </div>
     </div>
 
+    <!-- Formation Selection -->
+    <div class="card">
+      <div class="card-title">Formation</div>
+      <div class="formation-select" id="formationSelect"></div>
+      <div style="margin-top:12px;">
+        <div class="pitch" id="setupPitch">
+          <div class="pitch-half-line"></div>
+          <div class="pitch-center-circle"></div>
+          <div class="pitch-center-dot"></div>
+          <div class="pitch-penalty-top"></div>
+          <div class="pitch-goal-top"></div>
+          <div class="pitch-penalty-bottom"></div>
+          <div class="pitch-goal-bottom"></div>
+          <div class="pitch-goal-net-top"></div>
+          <div class="pitch-goal-net-bottom"></div>
+          <div id="setupPitchPlayers"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Start Game -->
     <button id="btnStartGame" class="btn btn-primary btn-block" style="font-size:1.1rem;padding:16px;"
       onclick="startGame()">Start Game</button>
@@ -402,7 +554,7 @@ input:focus,select:focus{border-color:var(--blue);}
     <div class="header-row">
       <button class="header-btn" onclick="confirmEndGame()" style="font-size:.8rem;">End Game</button>
       <div style="text-align:center;">
-        <div class="half-label" id="gameHalfLabel">Half 1</div>
+        <div id="gameHalfLabel" style="font-size:.8rem;font-weight:700;color:var(--blue);"></div>
       </div>
       <div class="toggle-group" style="border:none;background:none;">
         <button class="toggle-opt active" data-gmode="auto" onclick="toggleGameMode('auto')"
@@ -416,8 +568,9 @@ input:focus,select:focus{border-color:var(--blue);}
   <div class="container">
     <!-- Timer -->
     <div class="game-timer">
+      <div class="half-indicator" id="timerHalfIndicator">HALF 1</div>
       <div class="timer-value" id="gameTimerValue">20:00</div>
-      <div class="timer-label" id="gameTimerLabel">Tap to start half</div>
+      <div class="timer-label" id="gameTimerLabel">remaining</div>
     </div>
     <div id="gameTimerBtn" style="text-align:center;margin-bottom:12px;">
       <button class="btn btn-primary" id="btnStartHalf" onclick="startHalf()">Start Half 1</button>
@@ -429,10 +582,27 @@ input:focus,select:focus{border-color:var(--blue);}
       <div class="sub-time" id="subTimerValue">--:--</div>
     </div>
 
+    <!-- Pitch visualization -->
+    <div class="pitch-container" id="gamePitchContainer">
+      <div class="pitch" id="gamePitch">
+        <div class="pitch-half-line"></div>
+        <div class="pitch-center-circle"></div>
+        <div class="pitch-center-dot"></div>
+        <div class="pitch-penalty-top"></div>
+        <div class="pitch-goal-top"></div>
+        <div class="pitch-penalty-bottom"></div>
+        <div class="pitch-goal-bottom"></div>
+        <div class="pitch-goal-net-top"></div>
+        <div class="pitch-goal-net-bottom"></div>
+        <div id="gamePitchPlayers"></div>
+      </div>
+    </div>
+
     <!-- Auto schedule preview -->
     <div id="autoScheduleSection" style="display:none;">
       <div class="card">
         <div class="card-title">Rotation Schedule</div>
+        <div style="font-size:.75rem;color:var(--text3);margin-bottom:8px;">Time remaining when subs happen</div>
         <div id="autoScheduleList"></div>
       </div>
     </div>
@@ -454,6 +624,15 @@ input:focus,select:focus{border-color:var(--blue);}
       <div class="field-section-title">Injured</div>
       <div id="injuredPlayers"></div>
     </div>
+  </div>
+</div>
+
+<!-- Multi-sub bar for manual mode -->
+<div id="multiSubBar" class="multi-sub-bar">
+  <div class="msb-info" id="multiSubInfo">Select players to swap</div>
+  <div class="msb-actions">
+    <button class="btn btn-secondary btn-sm" onclick="cancelMultiSub()">Cancel</button>
+    <button class="btn btn-primary btn-sm" id="btnExecuteMultiSub" onclick="executeMultiSub()" disabled>Swap Selected</button>
   </div>
 </div>
 
@@ -522,13 +701,60 @@ let roster = JSON.parse(localStorage.getItem('st_roster') || '[]');
 let gameHistory = JSON.parse(localStorage.getItem('st_history') || '[]');
 let subMode = localStorage.getItem('st_subMode') || 'auto';
 let goalie1Id = null, goalie2Id = null;
+let selectedFormation = localStorage.getItem('st_formation') || '1-3-3';
 
 // Game state
-let game = null; // active game object
-let halfTimer = null; // interval for half countdown
-let timeTracker = null; // interval for tracking play time
-let subSchedule = []; // auto mode schedule
+let game = null;
+let halfTimer = null;
+let timeTracker = null;
+let subSchedule = [];
 let nextSubIndex = 0;
+
+// Manual multi-sub selection state
+let manualSubFieldSelected = [];  // ids of field players selected to come off
+let manualSubBenchSelected = [];  // ids of bench players selected to go on
+
+// Formation position assignments: maps positionIndex -> playerId
+let positionAssignments = {};
+
+// ==================== FORMATIONS ====================
+const FORMATIONS = {
+  '1-3-3': {
+    label: '1-3-3',
+    positions: [
+      {x:50,y:92,role:'GK'},
+      {x:20,y:65,role:'DEF'},{x:50,y:65,role:'DEF'},{x:80,y:65,role:'DEF'},
+      {x:20,y:35,role:'FWD'},{x:50,y:35,role:'FWD'},{x:80,y:35,role:'FWD'}
+    ]
+  },
+  '1-2-3-1': {
+    label: '1-2-3-1',
+    positions: [
+      {x:50,y:92,role:'GK'},
+      {x:30,y:70,role:'DEF'},{x:70,y:70,role:'DEF'},
+      {x:20,y:50,role:'MID'},{x:50,y:50,role:'MID'},{x:80,y:50,role:'MID'},
+      {x:50,y:25,role:'FWD'}
+    ]
+  },
+  '1-2-2-2': {
+    label: '1-2-2-2',
+    positions: [
+      {x:50,y:92,role:'GK'},
+      {x:30,y:70,role:'DEF'},{x:70,y:70,role:'DEF'},
+      {x:30,y:48,role:'MID'},{x:70,y:48,role:'MID'},
+      {x:30,y:25,role:'FWD'},{x:70,y:25,role:'FWD'}
+    ]
+  },
+  '1-3-2-1': {
+    label: '1-3-2-1',
+    positions: [
+      {x:50,y:92,role:'GK'},
+      {x:20,y:68,role:'DEF'},{x:50,y:68,role:'DEF'},{x:80,y:68,role:'DEF'},
+      {x:35,y:45,role:'MID'},{x:65,y:45,role:'MID'},
+      {x:50,y:22,role:'FWD'}
+    ]
+  }
+};
 
 // ==================== AUDIO ====================
 let audioCtx = null;
@@ -536,7 +762,8 @@ function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
-function playBeep(freq = 880, duration = 0.15, count = 3) {
+function playBeep(freq, duration, count) {
+  freq = freq || 880; duration = duration || 0.15; count = count || 3;
   try {
     const ctx = getAudioCtx();
     for (let i = 0; i < count; i++) {
@@ -562,14 +789,28 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 function fmt(secs) {
   const m = Math.floor(Math.abs(secs) / 60);
   const s = Math.abs(secs) % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return m + ':' + s.toString().padStart(2, '0');
 }
 function saveRoster() { localStorage.setItem('st_roster', JSON.stringify(roster)); }
 function saveHistory() { localStorage.setItem('st_history', JSON.stringify(gameHistory)); }
 
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function abbrev(name) {
+  if (name.length <= 6) return name;
+  // Try first name only
+  const parts = name.split(/\s+/);
+  if (parts[0].length <= 6) return parts[0];
+  return name.substring(0, 5) + '.';
+}
+
 // ==================== SCREEN NAV ====================
 function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById('screen-' + name).classList.add('active');
   if (name === 'setup') renderSetup();
   if (name === 'history') renderHistory();
@@ -579,39 +820,41 @@ function showScreen(name) {
 function renderSetup() {
   renderRoster();
   renderGoalieSelects();
-  // Restore config
-  const cfg = JSON.parse(localStorage.getItem('st_config') || '{}');
+  renderFormationSelect();
+  renderSetupPitch();
+  var cfg = JSON.parse(localStorage.getItem('st_config') || '{}');
   if (cfg.fieldPlayers) document.getElementById('cfgFieldPlayers').value = cfg.fieldPlayers;
   if (cfg.halfLength) document.getElementById('cfgHalfLength').value = cfg.halfLength;
+  if (cfg.subsPerRotation) document.getElementById('cfgSubsPerRotation').value = cfg.subsPerRotation;
   setSubMode(subMode);
 }
 
 function renderRoster() {
-  const list = document.getElementById('rosterList');
-  const empty = document.getElementById('rosterEmpty');
+  var list = document.getElementById('rosterList');
+  var empty = document.getElementById('rosterEmpty');
   if (roster.length === 0) {
     list.innerHTML = '';
     empty.style.display = 'block';
     return;
   }
   empty.style.display = 'none';
-  list.innerHTML = roster.map(p => `
-    <div class="player-item fade-enter">
-      <div class="name">${esc(p.name)}</div>
-      <span class="player-badge ${p.available ? 'badge-available' : 'badge-unavailable'}"
-        onclick="toggleAvailable('${p.id}')" style="cursor:pointer;">
-        ${p.available ? 'Available' : 'Out'}
-      </span>
-      <button class="icon-btn danger" onclick="removePlayer('${p.id}')" title="Remove">&#x2715;</button>
-    </div>
-  `).join('');
+  list.innerHTML = roster.map(function(p) {
+    return '<div class="player-item">' +
+      '<div class="name">' + esc(p.name) + '</div>' +
+      '<span class="player-badge ' + (p.available ? 'badge-available' : 'badge-unavailable') + '"' +
+      ' onclick="toggleAvailable(\'' + p.id + '\')" style="cursor:pointer;">' +
+      (p.available ? 'Available' : 'Out') +
+      '</span>' +
+      '<button class="icon-btn danger" onclick="removePlayer(\'' + p.id + '\')" title="Remove">&#x2715;</button>' +
+    '</div>';
+  }).join('');
 }
 
 function addPlayer() {
-  const input = document.getElementById('newPlayerName');
-  const name = input.value.trim();
+  var input = document.getElementById('newPlayerName');
+  var name = input.value.trim();
   if (!name) return;
-  roster.push({ id: uid(), name, available: true });
+  roster.push({ id: uid(), name: name, available: true });
   input.value = '';
   saveRoster();
   renderRoster();
@@ -619,7 +862,7 @@ function addPlayer() {
 }
 
 function removePlayer(id) {
-  roster = roster.filter(p => p.id !== id);
+  roster = roster.filter(function(p) { return p.id !== id; });
   if (goalie1Id === id) goalie1Id = null;
   if (goalie2Id === id) goalie2Id = null;
   saveRoster();
@@ -628,7 +871,7 @@ function removePlayer(id) {
 }
 
 function toggleAvailable(id) {
-  const p = roster.find(x => x.id === id);
+  var p = roster.find(function(x) { return x.id === id; });
   if (p) p.available = !p.available;
   if (!p.available) {
     if (goalie1Id === id) goalie1Id = null;
@@ -640,15 +883,15 @@ function toggleAvailable(id) {
 }
 
 function renderGoalieSelects() {
-  const avail = roster.filter(p => p.available);
-  ['goalie1Select', 'goalie2Select'].forEach((elId, idx) => {
-    const selId = idx === 0 ? goalie1Id : goalie2Id;
+  var avail = roster.filter(function(p) { return p.available; });
+  ['goalie1Select', 'goalie2Select'].forEach(function(elId, idx) {
+    var selId = idx === 0 ? goalie1Id : goalie2Id;
     document.getElementById(elId).innerHTML = avail.length === 0
       ? '<span style="color:var(--text3);font-size:.85rem;">No available players</span>'
-      : avail.map(p => `
-        <button class="goalie-opt ${p.id === selId ? 'selected' : ''}"
-          onclick="selectGoalie(${idx + 1},'${p.id}')">${esc(p.name)}</button>
-      `).join('');
+      : avail.map(function(p) {
+        return '<button class="goalie-opt ' + (p.id === selId ? 'selected' : '') + '"' +
+          ' onclick="selectGoalie(' + (idx + 1) + ',\'' + p.id + '\')">' + esc(p.name) + '</button>';
+      }).join('');
   });
 }
 
@@ -661,27 +904,53 @@ function selectGoalie(half, id) {
 function setSubMode(mode) {
   subMode = mode;
   localStorage.setItem('st_subMode', mode);
-  document.querySelectorAll('.toggle-group .toggle-opt[data-mode]').forEach(el => {
+  document.querySelectorAll('.toggle-group .toggle-opt[data-mode]').forEach(function(el) {
     el.classList.toggle('active', el.dataset.mode === mode);
   });
 }
 
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
+// ==================== FORMATION ====================
+function renderFormationSelect() {
+  var el = document.getElementById('formationSelect');
+  var html = '';
+  for (var key in FORMATIONS) {
+    html += '<button class="formation-opt ' + (key === selectedFormation ? 'selected' : '') + '"' +
+      ' onclick="selectFormation(\'' + key + '\')">' + FORMATIONS[key].label + '</button>';
+  }
+  el.innerHTML = html;
+}
+
+function selectFormation(key) {
+  selectedFormation = key;
+  localStorage.setItem('st_formation', key);
+  renderFormationSelect();
+  renderSetupPitch();
+}
+
+function renderSetupPitch() {
+  var f = FORMATIONS[selectedFormation];
+  if (!f) return;
+  var el = document.getElementById('setupPitchPlayers');
+  var html = '';
+  for (var i = 0; i < f.positions.length; i++) {
+    var pos = f.positions[i];
+    var cls = pos.role === 'GK' ? 'goalie-dot' : 'field-dot';
+    html += '<div class="pitch-player ' + cls + '" style="left:' + pos.x + '%;top:' + pos.y + '%;">' +
+      pos.role + '</div>';
+  }
+  el.innerHTML = html;
 }
 
 // ==================== START GAME ====================
 function startGame() {
-  const available = roster.filter(p => p.available);
-  const fieldPlayers = parseInt(document.getElementById('cfgFieldPlayers').value) || 7;
-  const halfLength = parseInt(document.getElementById('cfgHalfLength').value) || 20;
-  const errEl = document.getElementById('startError');
+  var available = roster.filter(function(p) { return p.available; });
+  var fieldPlayers = parseInt(document.getElementById('cfgFieldPlayers').value) || 7;
+  var halfLength = parseInt(document.getElementById('cfgHalfLength').value) || 20;
+  var subsPerRotation = parseInt(document.getElementById('cfgSubsPerRotation').value) || 2;
+  var errEl = document.getElementById('startError');
 
-  // Validate
   if (available.length < fieldPlayers) {
-    errEl.textContent = `Need at least ${fieldPlayers} available players (have ${available.length}).`;
+    errEl.textContent = 'Need at least ' + fieldPlayers + ' available players (have ' + available.length + ').';
     errEl.style.display = 'block';
     return;
   }
@@ -697,95 +966,113 @@ function startGame() {
   }
   errEl.style.display = 'none';
 
-  // Save config
-  localStorage.setItem('st_config', JSON.stringify({ fieldPlayers, halfLength }));
+  localStorage.setItem('st_config', JSON.stringify({ fieldPlayers: fieldPlayers, halfLength: halfLength, subsPerRotation: subsPerRotation }));
 
-  // Initialize game
   game = {
     id: uid(),
     date: new Date().toISOString(),
-    fieldPlayers,
+    fieldPlayers: fieldPlayers,
     halfLengthSecs: halfLength * 60,
-    subMode,
+    subsPerRotation: subsPerRotation,
+    subMode: subMode,
     half: 1,
     halfRunning: false,
     halfRemaining: halfLength * 60,
-    goalie1Id,
-    goalie2Id,
-    players: available.map(p => ({
-      id: p.id,
-      name: p.name,
-      status: 'bench', // bench, field, goalie, injured
-      fieldTime: 0, // accumulated seconds on field (not goalie)
-      goalieTime: 0,
-      lastOnFieldAt: null,
-    })),
+    goalie1Id: goalie1Id,
+    goalie2Id: goalie2Id,
+    formation: selectedFormation,
+    players: available.map(function(p) {
+      return {
+        id: p.id,
+        name: p.name,
+        status: 'bench',
+        fieldTime: 0,
+        goalieTime: 0,
+        lastOnFieldAt: null,
+        positionIndex: -1
+      };
+    })
   };
 
-  // Assign initial positions for Half 1
   assignHalfPositions(1);
+  manualSubFieldSelected = [];
+  manualSubBenchSelected = [];
 
   showScreen('game');
   renderGame();
 }
 
 function assignHalfPositions(half) {
-  const goalieId = half === 1 ? game.goalie1Id : game.goalie2Id;
+  var goalieId = half === 1 ? game.goalie1Id : game.goalie2Id;
   // Reset all to bench
-  game.players.forEach(p => {
+  game.players.forEach(function(p) {
     if (p.status !== 'injured') {
       p.status = 'bench';
       p.lastOnFieldAt = null;
+      p.positionIndex = -1;
     }
   });
   // Set goalie
-  const gk = game.players.find(p => p.id === goalieId);
-  if (gk && gk.status !== 'injured') gk.status = 'goalie';
+  var gk = game.players.find(function(p) { return p.id === goalieId; });
+  if (gk && gk.status !== 'injured') {
+    gk.status = 'goalie';
+    gk.positionIndex = 0; // GK is always position 0
+  }
 
-  // Pick field players: those with least field time first (excluding goalie + injured)
-  const candidates = game.players
-    .filter(p => p.status === 'bench')
-    .sort((a, b) => a.fieldTime - b.fieldTime);
-  const slotsNeeded = game.fieldPlayers - 1; // minus goalie
-  candidates.slice(0, slotsNeeded).forEach(p => { p.status = 'field'; });
+  // Pick field players: those with least field time first
+  var candidates = game.players
+    .filter(function(p) { return p.status === 'bench'; })
+    .sort(function(a, b) { return a.fieldTime - b.fieldTime; });
+  var slotsNeeded = game.fieldPlayers - 1;
+  var posIdx = 1; // start from 1, 0 is GK
+  candidates.slice(0, slotsNeeded).forEach(function(p) {
+    p.status = 'field';
+    p.positionIndex = posIdx;
+    posIdx++;
+  });
 }
 
 // ==================== GAME RENDERING ====================
 function renderGame() {
   if (!game) return;
-  // Half label
-  document.getElementById('gameHalfLabel').textContent =
-    game.half === 1 ? 'Half 1' : 'Half 2';
+
+  // Half indicator (prominent)
+  document.getElementById('timerHalfIndicator').textContent = 'HALF ' + game.half;
+  document.getElementById('gameHalfLabel').textContent = 'Half ' + game.half;
 
   // Timer
-  document.getElementById('gameTimerValue').textContent = fmt(game.halfRemaining);
-  const label = document.getElementById('gameTimerLabel');
-  const btn = document.getElementById('btnStartHalf');
+  document.getElementById('gameTimerValue').textContent = fmt(Math.max(0, game.halfRemaining));
+  var label = document.getElementById('gameTimerLabel');
+  var btn = document.getElementById('btnStartHalf');
   if (!game.halfRunning) {
-    label.textContent = game.half === 1 && game.halfRemaining === game.halfLengthSecs
-      ? 'Tap to start half' : 'Paused';
-    btn.textContent = game.halfRunning ? '' : `Start Half ${game.half}`;
+    if (game.half === 1 && game.halfRemaining === game.halfLengthSecs) {
+      label.textContent = 'tap to start half';
+    } else {
+      label.textContent = 'paused';
+    }
+    btn.textContent = 'Start Half ' + game.half;
     btn.style.display = '';
   } else {
-    label.textContent = 'Remaining';
+    label.textContent = 'remaining';
     btn.style.display = 'none';
   }
 
   // Mode toggle
-  document.querySelectorAll('[data-gmode]').forEach(el => {
+  document.querySelectorAll('[data-gmode]').forEach(function(el) {
     el.classList.toggle('active', el.dataset.gmode === game.subMode);
   });
 
   // Sub timer
-  const stSec = document.getElementById('subTimerSection');
+  var stSec = document.getElementById('subTimerSection');
   if (game.subMode === 'auto' && game.halfRunning && subSchedule.length > nextSubIndex) {
     stSec.style.display = '';
+    updateSubTimer();
   } else {
     stSec.style.display = 'none';
   }
 
   // Auto schedule
-  const asSec = document.getElementById('autoScheduleSection');
+  var asSec = document.getElementById('autoScheduleSection');
   if (game.subMode === 'auto' && subSchedule.length > 0) {
     asSec.style.display = '';
     renderAutoSchedule();
@@ -793,123 +1080,209 @@ function renderGame() {
     asSec.style.display = 'none';
   }
 
-  // Players
+  // Full DOM rebuild of player sections
   renderGamePlayers();
+
+  // Pitch
+  renderGamePitch();
+
+  // Multi-sub bar
+  updateMultiSubBar();
 }
 
 function renderGamePlayers() {
-  const field = game.players.filter(p => p.status === 'field');
-  const bench = game.players.filter(p => p.status === 'bench');
-  const injured = game.players.filter(p => p.status === 'injured');
-  const goalies = game.players.filter(p => p.status === 'goalie');
+  if (!game) return;
+  var field = game.players.filter(function(p) { return p.status === 'field'; });
+  var bench = game.players.filter(function(p) { return p.status === 'bench'; });
+  var injured = game.players.filter(function(p) { return p.status === 'injured'; });
+  var goalies = game.players.filter(function(p) { return p.status === 'goalie'; });
 
   document.getElementById('fieldCount').textContent = field.length;
   document.getElementById('benchCount').textContent = bench.length;
 
-  // Sort bench by least time
-  bench.sort((a, b) => a.fieldTime - b.fieldTime);
+  bench.sort(function(a, b) { return a.fieldTime - b.fieldTime; });
 
-  document.getElementById('fieldPlayers').innerHTML = field.map(p => playerCard(p, 'on-field')).join('');
-  document.getElementById('goaliePlayers').innerHTML = goalies.map(p => playerCard(p, 'goalie')).join('');
-  document.getElementById('benchPlayers').innerHTML = bench.map((p, i) => playerCard(p, 'on-bench', i === 0)).join('');
+  // Determine which players are due for sub soon (auto mode)
+  var dueSoonIds = {};
+  if (game.subMode === 'auto' && game.halfRunning && nextSubIndex < subSchedule.length) {
+    var nextEv = subSchedule[nextSubIndex];
+    if (nextEv && nextEv.pairs) {
+      nextEv.pairs.forEach(function(pair) {
+        dueSoonIds[pair.offId] = true;
+      });
+    }
+  }
 
-  const injSec = document.getElementById('injuredSection');
+  document.getElementById('fieldPlayers').innerHTML = field.map(function(p) {
+    return playerCard(p, 'on-field', false, dueSoonIds[p.id] || false);
+  }).join('');
+  document.getElementById('goaliePlayers').innerHTML = goalies.map(function(p) {
+    return playerCard(p, 'goalie', false, false);
+  }).join('');
+  document.getElementById('benchPlayers').innerHTML = bench.map(function(p, i) {
+    return playerCard(p, 'on-bench', i === 0, false);
+  }).join('');
+
+  var injSec = document.getElementById('injuredSection');
   if (injured.length > 0) {
     injSec.style.display = '';
-    document.getElementById('injuredPlayers').innerHTML = injured.map(p => playerCard(p, 'injured')).join('');
+    document.getElementById('injuredPlayers').innerHTML = injured.map(function(p) {
+      return playerCard(p, 'injured', false, false);
+    }).join('');
   } else {
     injSec.style.display = 'none';
   }
 }
 
-function playerCard(p, cls, suggested = false) {
-  const time = fmt(p.fieldTime);
-  let actions = '';
+function playerCard(p, cls, suggested, dueSoon) {
+  var time = fmt(p.fieldTime);
+  var actions = '';
+  var isFieldSelected = manualSubFieldSelected.indexOf(p.id) !== -1;
+  var isBenchSelected = manualSubBenchSelected.indexOf(p.id) !== -1;
+  var selectedClass = (isFieldSelected || isBenchSelected) ? ' selected-for-sub' : '';
+  var dueClass = dueSoon ? ' due-for-sub' : '';
 
-  if (game.subMode === 'manual' || game.halfRunning) {
-    if (p.status === 'field') {
-      actions = `
-        <button class="btn btn-sm btn-secondary" onclick="manualSubOff('${p.id}')">Bench</button>
-        <button class="btn btn-sm btn-danger" onclick="injurePlayer('${p.id}')" style="padding:8px;">Injured</button>
-      `;
-    } else if (p.status === 'bench' && game.halfRunning) {
-      actions = `<button class="btn btn-sm btn-primary" onclick="manualSubOn('${p.id}')">Sub In</button>`;
-    } else if (p.status === 'injured') {
-      actions = `<button class="btn btn-sm btn-secondary" onclick="recoverPlayer('${p.id}')">Recover</button>`;
+  if (p.status === 'field') {
+    if (game.subMode === 'manual' && game.halfRunning) {
+      actions = '<button class="btn btn-sm ' + (isFieldSelected ? 'btn-blue' : 'btn-secondary') + '" onclick="toggleFieldForSub(\'' + p.id + '\')">' +
+        (isFieldSelected ? 'Selected' : 'Select') + '</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="injurePlayer(\'' + p.id + '\')" style="padding:8px;">Injured</button>';
+    } else if (game.halfRunning) {
+      actions = '<button class="btn btn-sm btn-danger" onclick="injurePlayer(\'' + p.id + '\')" style="padding:8px;">Injured</button>';
     }
+  } else if (p.status === 'bench' && game.halfRunning) {
+    if (game.subMode === 'manual') {
+      actions = '<button class="btn btn-sm ' + (isBenchSelected ? 'btn-blue' : 'btn-primary') + '" onclick="toggleBenchForSub(\'' + p.id + '\')">' +
+        (isBenchSelected ? 'Selected' : 'Sub In') + '</button>';
+    }
+  } else if (p.status === 'injured') {
+    actions = '<button class="btn btn-sm btn-secondary" onclick="recoverPlayer(\'' + p.id + '\')">Recover</button>';
   }
 
-  return `
-    <div class="game-player ${cls} ${suggested ? 'suggested' : ''} fade-enter">
-      <div class="gp-name">${esc(p.name)}</div>
-      <div class="gp-time">${time}</div>
-      <div class="gp-actions">${actions}</div>
-    </div>
-  `;
+  return '<div class="game-player ' + cls + selectedClass + dueClass +
+    (suggested ? ' suggested' : '') + '" data-player-id="' + p.id + '">' +
+    '<div class="gp-name">' + esc(p.name) + '</div>' +
+    '<div class="gp-time" data-time-for="' + p.id + '">' + time + '</div>' +
+    '<div class="gp-actions">' + actions + '</div>' +
+    '</div>';
+}
+
+// Update only time text on existing DOM elements (no DOM rebuild)
+function updatePlayerTimes() {
+  if (!game) return;
+  game.players.forEach(function(p) {
+    var el = document.querySelector('[data-time-for="' + p.id + '"]');
+    if (el) {
+      el.textContent = fmt(p.fieldTime);
+    }
+  });
+}
+
+function updateSubTimer() {
+  if (game.subMode === 'auto' && nextSubIndex < subSchedule.length) {
+    var nextEv = subSchedule[nextSubIndex];
+    var secsUntil = game.halfRemaining - nextEv.atRemaining;
+    document.getElementById('subTimerValue').textContent = fmt(Math.max(0, secsUntil));
+  }
 }
 
 function renderAutoSchedule() {
-  const list = document.getElementById('autoScheduleList');
-  list.innerHTML = subSchedule.map((ev, i) => {
-    const done = i < nextSubIndex;
-    const current = i === nextSubIndex && game.halfRunning;
-    return `
-      <div class="schedule-item" style="${done ? 'opacity:.4;' : ''} ${current ? 'border:1px solid var(--purple);' : ''}">
-        <span class="sched-time">${fmt(ev.atRemaining)}</span>
-        <span class="sched-off">${esc(ev.offName)}</span>
-        <span class="sched-arrow">&#8594;</span>
-        <span class="sched-on">${esc(ev.onName)}</span>
-      </div>
-    `;
+  var list = document.getElementById('autoScheduleList');
+  list.innerHTML = subSchedule.map(function(ev, i) {
+    var done = i < nextSubIndex;
+    var current = i === nextSubIndex && game.halfRunning;
+    var elapsed = game.halfLengthSecs - ev.atRemaining;
+    var pairsHtml = ev.pairs.map(function(pair) {
+      return '<div class="sched-pair">' +
+        '<span class="sched-off">' + esc(pair.offName) + '</span>' +
+        '<span class="sched-arrow"> &#8596; </span>' +
+        '<span class="sched-on">' + esc(pair.onName) + '</span>' +
+        '</div>';
+    }).join('');
+
+    return '<div class="schedule-item" style="' + (done ? 'opacity:.4;' : '') + (current ? 'border:1px solid var(--purple);' : '') + '">' +
+      '<span class="sched-time">' + fmt(ev.atRemaining) + '</span>' +
+      '<div class="sched-pairs">' + pairsHtml + '</div>' +
+      '</div>';
   }).join('');
+}
+
+// ==================== GAME PITCH ====================
+function renderGamePitch() {
+  if (!game) return;
+  var f = FORMATIONS[game.formation];
+  if (!f) return;
+  var el = document.getElementById('gamePitchPlayers');
+
+  // Determine which players are due for sub soon
+  var dueSoonIds = {};
+  if (game.subMode === 'auto' && game.halfRunning && nextSubIndex < subSchedule.length) {
+    var nextEv = subSchedule[nextSubIndex];
+    if (nextEv && nextEv.pairs) {
+      nextEv.pairs.forEach(function(pair) {
+        dueSoonIds[pair.offId] = true;
+      });
+    }
+  }
+
+  var html = '';
+  var onField = game.players.filter(function(p) { return p.status === 'field' || p.status === 'goalie'; });
+  onField.forEach(function(p) {
+    var posIdx = p.positionIndex;
+    if (posIdx < 0 || posIdx >= f.positions.length) return;
+    var pos = f.positions[posIdx];
+    var cls = p.status === 'goalie' ? 'goalie-dot' : 'field-dot';
+    var dueClass = dueSoonIds[p.id] ? ' due-soon' : '';
+    html += '<div class="pitch-player ' + cls + dueClass + '" style="left:' + pos.x + '%;top:' + pos.y + '%;">' +
+      esc(abbrev(p.name)) + '</div>';
+  });
+  el.innerHTML = html;
 }
 
 // ==================== GAME TIMER ====================
 function startHalf() {
   if (!game || game.halfRunning) return;
-  // Resume audio context (requires user gesture)
   try { getAudioCtx().resume(); } catch(e) {}
 
   game.halfRunning = true;
 
-  // Mark field players and goalie as "on since now"
-  const now = Date.now();
-  game.players.forEach(p => {
+  var now = Date.now();
+  game.players.forEach(function(p) {
     if (p.status === 'field' || p.status === 'goalie') p.lastOnFieldAt = now;
   });
 
-  // Generate auto schedule
   if (game.subMode === 'auto') {
     generateAutoSchedule();
   }
 
-  // Start the half timer
   halfTimer = setInterval(tickHalf, 1000);
   timeTracker = setInterval(trackTime, 1000);
 
   document.getElementById('btnStartHalf').style.display = 'none';
+  document.getElementById('gameTimerLabel').textContent = 'remaining';
   renderGame();
 }
 
+// tickHalf: decrements timer, checks sub events. Only updates timer display directly.
 function tickHalf() {
   if (!game || !game.halfRunning) return;
   game.halfRemaining--;
 
+  // Update just the timer display text
   document.getElementById('gameTimerValue').textContent = fmt(Math.max(0, game.halfRemaining));
 
   // Check auto subs
   if (game.subMode === 'auto' && nextSubIndex < subSchedule.length) {
-    const ev = subSchedule[nextSubIndex];
+    var ev = subSchedule[nextSubIndex];
     if (game.halfRemaining <= ev.atRemaining) {
       executeAutoSub(ev);
       nextSubIndex++;
+      // After a sub, do a full re-render since player status changed
+      renderGame();
+      return; // renderGame already updates everything
     }
-    // Update sub timer
-    if (nextSubIndex < subSchedule.length) {
-      const nextEv = subSchedule[nextSubIndex];
-      const secsUntil = game.halfRemaining - nextEv.atRemaining;
-      document.getElementById('subTimerValue').textContent = fmt(Math.max(0, secsUntil));
-    }
+    // Update sub timer display directly
+    updateSubTimer();
   }
   if (nextSubIndex >= subSchedule.length) {
     document.getElementById('subTimerSection').style.display = 'none';
@@ -921,21 +1294,23 @@ function tickHalf() {
   }
 }
 
+// trackTime: updates player time values. Only touches time text on existing DOM elements.
 function trackTime() {
   if (!game || !game.halfRunning) return;
-  const now = Date.now();
-  game.players.forEach(p => {
+  var now = Date.now();
+  game.players.forEach(function(p) {
     if (p.status === 'field' && p.lastOnFieldAt) {
-      const elapsed = Math.round((now - p.lastOnFieldAt) / 1000);
+      var elapsed = Math.round((now - p.lastOnFieldAt) / 1000);
       p.fieldTime += elapsed;
       p.lastOnFieldAt = now;
     } else if (p.status === 'goalie' && p.lastOnFieldAt) {
-      const elapsed = Math.round((now - p.lastOnFieldAt) / 1000);
+      var elapsed = Math.round((now - p.lastOnFieldAt) / 1000);
       p.goalieTime += elapsed;
       p.lastOnFieldAt = now;
     }
   });
-  renderGamePlayers();
+  // Only update time text, not full DOM rebuild
+  updatePlayerTimes();
 }
 
 function endHalf() {
@@ -945,7 +1320,6 @@ function endHalf() {
   halfTimer = null;
   timeTracker = null;
 
-  // Final time flush
   flushTime();
 
   if (game.half === 1) {
@@ -956,8 +1330,8 @@ function endHalf() {
 }
 
 function flushTime() {
-  const now = Date.now();
-  game.players.forEach(p => {
+  var now = Date.now();
+  game.players.forEach(function(p) {
     if (p.status === 'field' && p.lastOnFieldAt) {
       p.fieldTime += Math.round((now - p.lastOnFieldAt) / 1000);
       p.lastOnFieldAt = null;
@@ -973,134 +1347,214 @@ function generateAutoSchedule() {
   subSchedule = [];
   nextSubIndex = 0;
 
-  const bench = game.players.filter(p => p.status === 'bench');
-  const field = game.players.filter(p => p.status === 'field');
+  var bench = game.players.filter(function(p) { return p.status === 'bench'; });
+  var field = game.players.filter(function(p) { return p.status === 'field'; });
 
-  if (bench.length === 0) return; // Everyone is on field
+  if (bench.length === 0) return;
 
-  const totalPlayers = field.length + bench.length; // excluding goalie & injured
-  const halfSecs = game.halfRemaining;
+  var fieldSlots = field.length; // on-field minus goalie (already excluded)
+  var totalOutfield = field.length + bench.length; // all non-injured non-goalie
+  var halfSecs = game.halfRemaining;
+  var subsPerRotation = game.subsPerRotation || 2;
 
-  // Each player should play: (fieldSlots / totalPlayers) * halfSecs
-  // Number of rotation slots = how many times we need to sub
-  // Interval between subs = halfSecs / (number of sub events)
-  // We want each bench player to get on, and each field player to get a break
+  // Fair time per player on field
+  var fairTimePerPlayer = (fieldSlots * halfSecs) / totalOutfield;
 
-  // Simple round-robin: cycle bench players in at equal intervals
-  const numSubs = bench.length; // at minimum, each bench player gets on once
-  // But we might want more rotations so everyone gets equal time
-  // Total sub events needed for full fairness: enough so each player plays roughly equal
-  // Simple approach: fieldSlots * rotations where rotations makes it even
+  // Interval between sub events = fairTimePerPlayer
+  var interval = Math.max(30, Math.floor(fairTimePerPlayer));
 
-  // Calculate how many total "slots" of time we have
-  const fieldSlots = field.length;
-  // Fair time per player
-  const fairTime = (fieldSlots * halfSecs) / totalPlayers;
-  // Interval = fairTime (each player gets this long before a rotation)
-  const interval = Math.max(30, Math.floor(fairTime)); // at least 30 seconds
+  // Build the schedule
+  var currentField = field.slice().sort(function(a, b) { return b.fieldTime - a.fieldTime; });
+  var currentBench = bench.slice().sort(function(a, b) { return a.fieldTime - b.fieldTime; });
 
-  // Generate sub events
-  let currentField = [...field];
-  let currentBench = [...bench].sort((a, b) => a.fieldTime - b.fieldTime);
-  let timePoint = halfSecs - interval;
+  var elapsed = interval;
 
-  while (timePoint > 15 && currentBench.length > 0) {
-    // Sub off the player with most accumulated time on field
-    const offPlayer = currentField.sort((a, b) => {
-      // Add approximate current half time
-      const aTime = a.fieldTime + (halfSecs - timePoint);
-      const bTime = b.fieldTime + (halfSecs - timePoint);
-      return bTime - aTime;
-    })[0];
+  while (elapsed < halfSecs - 15 && currentBench.length > 0) {
+    var atRemaining = halfSecs - elapsed;
+    if (atRemaining < 10) break;
 
-    // Sub on the player with least time
-    const onPlayer = currentBench[0];
+    // How many pairs to swap at this event
+    var pairsCount = Math.min(subsPerRotation, currentBench.length, currentField.length);
+    if (pairsCount === 0) break;
 
-    if (offPlayer && onPlayer) {
-      subSchedule.push({
-        atRemaining: Math.max(0, timePoint),
+    var pairs = [];
+    for (var i = 0; i < pairsCount; i++) {
+      // Sort field by most total time (accumulated + estimated this-half time)
+      currentField.sort(function(a, b) {
+        var aTime = a.fieldTime + (elapsed);
+        var bTime = b.fieldTime + (elapsed);
+        return bTime - aTime;
+      });
+      // Sort bench by least time
+      currentBench.sort(function(a, b) { return a.fieldTime - b.fieldTime; });
+
+      var offPlayer = currentField[0];
+      var onPlayer = currentBench[0];
+
+      if (!offPlayer || !onPlayer) break;
+
+      pairs.push({
         offId: offPlayer.id,
         offName: offPlayer.name,
         onId: onPlayer.id,
-        onName: onPlayer.name,
+        onName: onPlayer.name
       });
 
-      // Swap in arrays
-      currentField = currentField.filter(p => p.id !== offPlayer.id);
+      // Swap in tracking arrays
+      currentField = currentField.filter(function(p) { return p.id !== offPlayer.id; });
       currentField.push(onPlayer);
-      currentBench = currentBench.filter(p => p.id !== onPlayer.id);
+      currentBench = currentBench.filter(function(p) { return p.id !== onPlayer.id; });
       currentBench.push(offPlayer);
-      currentBench.sort((a, b) => a.fieldTime - b.fieldTime);
     }
 
-    timePoint -= interval;
+    if (pairs.length > 0) {
+      subSchedule.push({
+        atRemaining: Math.max(0, atRemaining),
+        pairs: pairs
+      });
+    }
+
+    elapsed += interval;
   }
 }
 
 function executeAutoSub(ev) {
-  const offP = game.players.find(p => p.id === ev.offId);
-  const onP = game.players.find(p => p.id === ev.onId);
+  if (!ev.pairs || ev.pairs.length === 0) return;
 
-  if (!offP || !onP) return;
-  if (offP.status !== 'field' || onP.status !== 'bench') return;
+  var now = Date.now();
+  var alertParts = [];
 
-  // Flush time for the player coming off
-  const now = Date.now();
-  if (offP.lastOnFieldAt) {
-    offP.fieldTime += Math.round((now - offP.lastOnFieldAt) / 1000);
-    offP.lastOnFieldAt = null;
+  ev.pairs.forEach(function(pair) {
+    var offP = game.players.find(function(p) { return p.id === pair.offId; });
+    var onP = game.players.find(function(p) { return p.id === pair.onId; });
+
+    if (!offP || !onP) return;
+    if (offP.status !== 'field' || onP.status !== 'bench') return;
+
+    // Flush time for player coming off
+    if (offP.lastOnFieldAt) {
+      offP.fieldTime += Math.round((now - offP.lastOnFieldAt) / 1000);
+      offP.lastOnFieldAt = null;
+    }
+
+    // Transfer position
+    var posIdx = offP.positionIndex;
+    offP.status = 'bench';
+    offP.positionIndex = -1;
+    onP.status = 'field';
+    onP.lastOnFieldAt = now;
+    onP.positionIndex = posIdx;
+
+    alertParts.push({ offName: offP.name, onName: onP.name });
+  });
+
+  if (alertParts.length > 0) {
+    showSubAlertMulti(alertParts);
+    playBeep(880, 0.15, 3);
+    vibrate([200, 100, 200, 100, 200]);
+  }
+}
+
+// ==================== MANUAL MULTI-SUB ====================
+function toggleFieldForSub(id) {
+  var idx = manualSubFieldSelected.indexOf(id);
+  if (idx === -1) {
+    manualSubFieldSelected.push(id);
+  } else {
+    manualSubFieldSelected.splice(idx, 1);
+  }
+  renderGamePlayers();
+  updateMultiSubBar();
+}
+
+function toggleBenchForSub(id) {
+  var idx = manualSubBenchSelected.indexOf(id);
+  if (idx === -1) {
+    manualSubBenchSelected.push(id);
+  } else {
+    manualSubBenchSelected.splice(idx, 1);
+  }
+  renderGamePlayers();
+  updateMultiSubBar();
+}
+
+function updateMultiSubBar() {
+  var bar = document.getElementById('multiSubBar');
+  if (!game || game.subMode !== 'manual' || !game.halfRunning) {
+    bar.classList.remove('active');
+    return;
+  }
+  var fCount = manualSubFieldSelected.length;
+  var bCount = manualSubBenchSelected.length;
+  if (fCount === 0 && bCount === 0) {
+    bar.classList.remove('active');
+    return;
+  }
+  bar.classList.add('active');
+  var info = document.getElementById('multiSubInfo');
+  info.textContent = fCount + ' field player' + (fCount !== 1 ? 's' : '') + ' and ' +
+    bCount + ' bench player' + (bCount !== 1 ? 's' : '') + ' selected';
+
+  var btn = document.getElementById('btnExecuteMultiSub');
+  // Enable only when counts match and > 0
+  btn.disabled = !(fCount > 0 && bCount > 0 && fCount === bCount);
+}
+
+function cancelMultiSub() {
+  manualSubFieldSelected = [];
+  manualSubBenchSelected = [];
+  renderGamePlayers();
+  updateMultiSubBar();
+}
+
+function executeMultiSub() {
+  if (!game || !game.halfRunning) return;
+  if (manualSubFieldSelected.length === 0 || manualSubFieldSelected.length !== manualSubBenchSelected.length) return;
+
+  var now = Date.now();
+  var alertParts = [];
+
+  for (var i = 0; i < manualSubFieldSelected.length; i++) {
+    var offP = game.players.find(function(p) { return p.id === manualSubFieldSelected[i]; });
+    var onP = game.players.find(function(p) { return p.id === manualSubBenchSelected[i]; });
+
+    if (!offP || !onP) continue;
+    if (offP.status !== 'field' || onP.status !== 'bench') continue;
+
+    if (offP.lastOnFieldAt) {
+      offP.fieldTime += Math.round((now - offP.lastOnFieldAt) / 1000);
+      offP.lastOnFieldAt = null;
+    }
+
+    var posIdx = offP.positionIndex;
+    offP.status = 'bench';
+    offP.positionIndex = -1;
+    onP.status = 'field';
+    onP.lastOnFieldAt = now;
+    onP.positionIndex = posIdx;
+
+    alertParts.push({ offName: offP.name, onName: onP.name });
   }
 
-  offP.status = 'bench';
-  onP.status = 'field';
-  onP.lastOnFieldAt = now;
+  manualSubFieldSelected = [];
+  manualSubBenchSelected = [];
 
-  // Alert
-  showSubAlert(offP.name, onP.name);
-  playBeep(880, 0.15, 3);
-  vibrate([200, 100, 200, 100, 200]);
+  if (alertParts.length > 0) {
+    showSubAlertMulti(alertParts);
+    playBeep(880, 0.15, 3);
+    vibrate([200, 100, 200, 100, 200]);
+  }
 
   renderGame();
 }
 
-// ==================== MANUAL SUBS ====================
-function manualSubOff(id) {
-  if (!game || !game.halfRunning) return;
-  const p = game.players.find(x => x.id === id);
-  if (!p || p.status !== 'field') return;
-
-  const now = Date.now();
-  if (p.lastOnFieldAt) {
-    p.fieldTime += Math.round((now - p.lastOnFieldAt) / 1000);
-    p.lastOnFieldAt = null;
-  }
-  p.status = 'bench';
-  renderGamePlayers();
-}
-
-function manualSubOn(id) {
-  if (!game || !game.halfRunning) return;
-  const p = game.players.find(x => x.id === id);
-  if (!p || p.status !== 'bench') return;
-
-  // Check if there's room on the field
-  const onField = game.players.filter(x => x.status === 'field').length;
-  const goalies = game.players.filter(x => x.status === 'goalie').length;
-  if (onField + goalies >= game.fieldPlayers) {
-    // Need to sub someone off first - just put them on anyway (manual mode flexibility)
-  }
-
-  p.status = 'field';
-  p.lastOnFieldAt = Date.now();
-  renderGamePlayers();
-}
-
+// ==================== INJURY ====================
 function injurePlayer(id) {
   if (!game) return;
-  const p = game.players.find(x => x.id === id);
+  var p = game.players.find(function(x) { return x.id === id; });
   if (!p || (p.status !== 'field' && p.status !== 'goalie')) return;
 
-  const now = Date.now();
+  var now = Date.now();
   if (p.lastOnFieldAt) {
     if (p.status === 'field') {
       p.fieldTime += Math.round((now - p.lastOnFieldAt) / 1000);
@@ -1109,17 +1563,26 @@ function injurePlayer(id) {
     }
     p.lastOnFieldAt = null;
   }
-  p.status = 'injured';
 
-  // Suggest replacement
-  const bench = game.players.filter(x => x.status === 'bench').sort((a, b) => a.fieldTime - b.fieldTime);
+  var prevPosIdx = p.positionIndex;
+  p.status = 'injured';
+  p.positionIndex = -1;
+
+  // Suggest replacement from bench
+  var bench = game.players.filter(function(x) { return x.status === 'bench'; }).sort(function(a, b) { return a.fieldTime - b.fieldTime; });
   if (bench.length > 0 && game.halfRunning) {
-    const repl = bench[0];
+    var repl = bench[0];
     repl.status = 'field';
     repl.lastOnFieldAt = Date.now();
+    repl.positionIndex = prevPosIdx;
     playBeep(660, 0.2, 2);
     vibrate([200, 100, 200]);
-    showSubAlert(p.name + ' (injured)', repl.name);
+    showSubAlertMulti([{ offName: p.name + ' (injured)', onName: repl.name }]);
+  }
+
+  // Regenerate schedule if auto mode
+  if (game.subMode === 'auto' && game.halfRunning) {
+    generateAutoSchedule();
   }
 
   renderGame();
@@ -1127,18 +1590,29 @@ function injurePlayer(id) {
 
 function recoverPlayer(id) {
   if (!game) return;
-  const p = game.players.find(x => x.id === id);
+  var p = game.players.find(function(x) { return x.id === id; });
   if (!p || p.status !== 'injured') return;
   p.status = 'bench';
+
+  if (game.subMode === 'auto' && game.halfRunning) {
+    generateAutoSchedule();
+  }
+
   renderGame();
 }
 
 // ==================== ALERTS ====================
-function showSubAlert(offName, onName) {
-  const el = document.getElementById('subAlert');
-  document.getElementById('subAlertDetails').innerHTML = `
-    <div class="sub-detail"><span class="sched-off">${esc(offName)}</span><span class="arrow">&#8594;</span><span class="sched-on">${esc(onName)}</span></div>
-  `;
+function showSubAlertMulti(pairs) {
+  var el = document.getElementById('subAlert');
+  var html = '';
+  pairs.forEach(function(pair) {
+    html += '<div class="sub-detail">' +
+      '<span class="sched-off">' + esc(pair.offName) + '</span>' +
+      '<span class="arrow">&#8594;</span>' +
+      '<span class="sched-on">' + esc(pair.onName) + '</span>' +
+      '</div>';
+  });
+  document.getElementById('subAlertDetails').innerHTML = html;
   el.classList.add('active');
 }
 
@@ -1148,11 +1622,12 @@ function dismissSubAlert() {
 
 // ==================== HALFTIME ====================
 function showHalftime() {
-  const summary = game.players
-    .sort((a, b) => b.fieldTime - a.fieldTime)
-    .map(p => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.9rem;">
-      <span>${esc(p.name)}</span><span style="color:var(--text2);">${fmt(p.fieldTime)}</span>
-    </div>`).join('');
+  var sorted = game.players.slice().sort(function(a, b) { return b.fieldTime - a.fieldTime; });
+  var summary = sorted.map(function(p) {
+    return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.9rem;">' +
+      '<span>' + esc(p.name) + '</span><span style="color:var(--text2);">' + fmt(p.fieldTime) + '</span>' +
+      '</div>';
+  }).join('');
   document.getElementById('halftimeSummary').innerHTML = summary;
   document.getElementById('halftimeOverlay').classList.add('active');
 }
@@ -1164,11 +1639,12 @@ function startSecondHalf() {
   game.halfRunning = false;
   subSchedule = [];
   nextSubIndex = 0;
+  manualSubFieldSelected = [];
+  manualSubBenchSelected = [];
 
   assignHalfPositions(2);
 
-  // Re-mark goalie with timestamp
-  const gk = game.players.find(p => p.status === 'goalie');
+  var gk = game.players.find(function(p) { return p.status === 'goalie'; });
   if (gk) gk.lastOnFieldAt = null;
 
   renderGame();
@@ -1176,14 +1652,13 @@ function startSecondHalf() {
 
 // ==================== GAME OVER ====================
 function showGameOver() {
-  const summary = game.players
-    .sort((a, b) => b.fieldTime - a.fieldTime)
-    .map(p => {
-      const goalieStr = p.goalieTime > 0 ? ` <span style="color:var(--yellow);font-size:.75rem;">(GK ${fmt(p.goalieTime)})</span>` : '';
-      return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.9rem;">
-        <span>${esc(p.name)}${goalieStr}</span><span style="color:var(--green);">${fmt(p.fieldTime)}</span>
-      </div>`;
-    }).join('');
+  var sorted = game.players.slice().sort(function(a, b) { return b.fieldTime - a.fieldTime; });
+  var summary = sorted.map(function(p) {
+    var goalieStr = p.goalieTime > 0 ? ' <span style="color:var(--yellow);font-size:.75rem;">(GK ' + fmt(p.goalieTime) + ')</span>' : '';
+    return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.9rem;">' +
+      '<span>' + esc(p.name) + goalieStr + '</span><span style="color:var(--green);">' + fmt(p.fieldTime) + '</span>' +
+      '</div>';
+  }).join('');
   document.getElementById('gameOverSummary').innerHTML = summary;
   document.getElementById('gameOverOverlay').classList.add('active');
 }
@@ -1191,16 +1666,17 @@ function showGameOver() {
 function finishGame() {
   document.getElementById('gameOverOverlay').classList.remove('active');
 
-  // Save to history
-  const record = {
+  var record = {
     id: game.id,
     date: game.date,
     fieldPlayers: game.fieldPlayers,
     halfLengthSecs: game.halfLengthSecs,
-    players: game.players.map(p => ({
-      id: p.id, name: p.name,
-      fieldTime: p.fieldTime, goalieTime: p.goalieTime,
-    })),
+    players: game.players.map(function(p) {
+      return {
+        id: p.id, name: p.name,
+        fieldTime: p.fieldTime, goalieTime: p.goalieTime
+      };
+    })
   };
   gameHistory.unshift(record);
   saveHistory();
@@ -1210,7 +1686,7 @@ function finishGame() {
 }
 
 function confirmEndGame() {
-  showConfirm('End Game?', 'This will end the current game. Unsaved progress will be lost.', () => {
+  showConfirm('End Game?', 'This will end the current game. Unsaved progress will be lost.', function() {
     clearInterval(halfTimer);
     clearInterval(timeTracker);
     flushTime();
@@ -1224,16 +1700,18 @@ function toggleGameMode(mode) {
   if (mode === 'auto' && game.halfRunning && subSchedule.length === 0) {
     generateAutoSchedule();
   }
+  manualSubFieldSelected = [];
+  manualSubBenchSelected = [];
   renderGame();
 }
 
 // ==================== CONFIRM DIALOG ====================
-let confirmCallback = null;
+var confirmCallback = null;
 function showConfirm(title, msg, cb) {
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMsg').textContent = msg;
   confirmCallback = cb;
-  document.getElementById('confirmAction').onclick = () => { closeConfirm(); if (confirmCallback) confirmCallback(); };
+  document.getElementById('confirmAction').onclick = function() { closeConfirm(); if (confirmCallback) confirmCallback(); };
   document.getElementById('confirmOverlay').classList.add('active');
 }
 function closeConfirm() {
@@ -1248,58 +1726,57 @@ function renderHistory() {
 }
 
 function showHistoryTab(tab, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   document.getElementById('historyGames').style.display = tab === 'games' ? '' : 'none';
   document.getElementById('historyCumulative').style.display = tab === 'cumulative' ? '' : 'none';
 }
 
 function renderHistoryGames() {
-  const el = document.getElementById('historyGames');
+  var el = document.getElementById('historyGames');
   if (gameHistory.length === 0) {
     el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9917;</div><p>No games yet. Play your first game!</p></div>';
     return;
   }
-  el.innerHTML = gameHistory.map((g, i) => {
-    const d = new Date(g.date);
-    const dateStr = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-    const maxTime = Math.max(...g.players.map(p => p.fieldTime));
-    const minTime = Math.min(...g.players.map(p => p.fieldTime));
-    return `
-      <div class="history-game">
-        <div class="history-game-header" onclick="toggleHistoryGame(${i})">
-          <div>
-            <div style="font-weight:700;font-size:.95rem;">${dateStr}</div>
-            <div style="color:var(--text3);font-size:.8rem;">${g.players.length} players &middot; ${fmt(g.halfLengthSecs)} halves</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="text-align:right;">
-              <div style="font-size:.75rem;color:var(--text3);">Spread</div>
-              <div style="font-size:.85rem;font-weight:600;color:${maxTime - minTime < 120 ? 'var(--green)' : 'var(--yellow)'};">${fmt(maxTime - minTime)}</div>
-            </div>
-            <button class="history-delete" onclick="event.stopPropagation();deleteGame(${i})" title="Delete">&#x2715;</button>
-          </div>
-        </div>
-        <div class="history-game-body" id="histBody${i}">
-          ${g.players.sort((a, b) => b.fieldTime - a.fieldTime).map(p => `
-            <div class="history-player-row">
-              <span>${esc(p.name)}${p.goalieTime > 0 ? ' <span style="color:var(--yellow);font-size:.75rem;">GK</span>' : ''}</span>
-              <span style="font-weight:600;">${fmt(p.fieldTime)}</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+  el.innerHTML = gameHistory.map(function(g, i) {
+    var d = new Date(g.date);
+    var dateStr = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    var times = g.players.map(function(p) { return p.fieldTime; });
+    var maxTime = Math.max.apply(null, times);
+    var minTime = Math.min.apply(null, times);
+    return '<div class="history-game">' +
+      '<div class="history-game-header" onclick="toggleHistoryGame(' + i + ')">' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:.95rem;">' + dateStr + '</div>' +
+          '<div style="color:var(--text3);font-size:.8rem;">' + g.players.length + ' players &middot; ' + fmt(g.halfLengthSecs) + ' halves</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<div style="text-align:right;">' +
+            '<div style="font-size:.75rem;color:var(--text3);">Spread</div>' +
+            '<div style="font-size:.85rem;font-weight:600;color:' + (maxTime - minTime < 120 ? 'var(--green)' : 'var(--yellow)') + ';">' + fmt(maxTime - minTime) + '</div>' +
+          '</div>' +
+          '<button class="history-delete" onclick="event.stopPropagation();deleteGame(' + i + ')" title="Delete">&#x2715;</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="history-game-body" id="histBody' + i + '">' +
+        g.players.slice().sort(function(a, b) { return b.fieldTime - a.fieldTime; }).map(function(p) {
+          return '<div class="history-player-row">' +
+            '<span>' + esc(p.name) + (p.goalieTime > 0 ? ' <span style="color:var(--yellow);font-size:.75rem;">GK</span>' : '') + '</span>' +
+            '<span style="font-weight:600;">' + fmt(p.fieldTime) + '</span>' +
+            '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
 function toggleHistoryGame(i) {
-  const body = document.getElementById('histBody' + i);
+  var body = document.getElementById('histBody' + i);
   body.classList.toggle('open');
 }
 
 function deleteGame(i) {
-  showConfirm('Delete Game?', 'This cannot be undone.', () => {
+  showConfirm('Delete Game?', 'This cannot be undone.', function() {
     gameHistory.splice(i, 1);
     saveHistory();
     renderHistory();
@@ -1307,42 +1784,37 @@ function deleteGame(i) {
 }
 
 function renderCumulativeStats() {
-  const el = document.getElementById('historyCumulative');
+  var el = document.getElementById('historyCumulative');
   if (gameHistory.length === 0) {
     el.innerHTML = '<div class="empty-state"><p>No data yet.</p></div>';
     return;
   }
-  // Aggregate
-  const stats = {};
-  gameHistory.forEach(g => {
-    g.players.forEach(p => {
+  var stats = {};
+  gameHistory.forEach(function(g) {
+    g.players.forEach(function(p) {
       if (!stats[p.name]) stats[p.name] = { name: p.name, totalField: 0, totalGoalie: 0, games: 0 };
       stats[p.name].totalField += p.fieldTime;
-      stats[p.name].totalGoalie += p.goalieTime;
+      stats[p.name].totalGoalie += (p.goalieTime || 0);
       stats[p.name].games++;
     });
   });
-  const rows = Object.values(stats).sort((a, b) => b.totalField - a.totalField);
+  var rows = Object.values(stats).sort(function(a, b) { return b.totalField - a.totalField; });
 
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-title">Cumulative Playing Time</div>
-      <table class="stats-table">
-        <thead><tr><th>Player</th><th>Games</th><th>Field</th><th>Goalie</th><th>Avg/Game</th></tr></thead>
-        <tbody>
-          ${rows.map(r => `
-            <tr>
-              <td style="font-weight:600;">${esc(r.name)}</td>
-              <td>${r.games}</td>
-              <td>${fmt(r.totalField)}</td>
-              <td>${r.totalGoalie > 0 ? fmt(r.totalGoalie) : '-'}</td>
-              <td>${fmt(Math.round(r.totalField / r.games))}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
+  el.innerHTML = '<div class="card">' +
+    '<div class="card-title">Cumulative Playing Time</div>' +
+    '<table class="stats-table">' +
+    '<thead><tr><th>Player</th><th>Games</th><th>Field</th><th>Goalie</th><th>Avg/Game</th></tr></thead>' +
+    '<tbody>' +
+    rows.map(function(r) {
+      return '<tr>' +
+        '<td style="font-weight:600;">' + esc(r.name) + '</td>' +
+        '<td>' + r.games + '</td>' +
+        '<td>' + fmt(r.totalField) + '</td>' +
+        '<td>' + (r.totalGoalie > 0 ? fmt(r.totalGoalie) : '-') + '</td>' +
+        '<td>' + fmt(Math.round(r.totalField / r.games)) + '</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table></div>';
 }
 
 // ==================== INIT ====================
