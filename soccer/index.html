@@ -584,7 +584,10 @@ input:focus,select:focus{border-color:var(--blue);}
   <div class="sub-alert-content">
     <h2>Substitution!</h2>
     <div id="subAlertDetails"></div>
-    <button class="btn btn-primary btn-block" style="margin-top:12px;" onclick="dismissSubAlert()">Got it!</button>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="snoozeSubAlert()">Not yet</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="dismissSubAlert()">Done</button>
+    </div>
   </div>
 </div>
 
@@ -1811,12 +1814,29 @@ function showSubAlertMulti(pairs) {
       ' <span style="color:var(--yellow);">&harr;</span> ' +
       '<span style="color:var(--green);font-weight:700;">' + esc(pair.onName) + '</span></div>';
   });
+  pendingSubAlert = html;
   document.getElementById('subAlertDetails').innerHTML = html;
   document.getElementById('subAlert').classList.add('active');
 }
 
+var pendingSubAlert = null;
 function dismissSubAlert() {
   document.getElementById('subAlert').classList.remove('active');
+  pendingSubAlert = null;
+}
+function snoozeSubAlert() {
+  document.getElementById('subAlert').classList.remove('active');
+  // Re-alert in 30 seconds
+  if (pendingSubAlert) {
+    setTimeout(function() {
+      if (game && game.halfRunning && pendingSubAlert) {
+        document.getElementById('subAlertDetails').innerHTML = pendingSubAlert;
+        document.getElementById('subAlert').classList.add('active');
+        playBeep(880, 0.15, 2);
+        vibrate([200, 100, 200]);
+      }
+    }, 30000);
+  }
 }
 
 // ==================== HALFTIME ====================
