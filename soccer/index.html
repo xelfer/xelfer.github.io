@@ -49,6 +49,7 @@ input:focus,select:focus{border-color:var(--blue);}
 .header-btn:active{background:var(--bg4);}
 
 .container{max-width:600px;margin:0 auto;padding:12px;}
+#screen-game .container{max-width:800px;}
 
 .card{
   background:var(--bg2);border:1px solid var(--border);
@@ -195,11 +196,15 @@ input:focus,select:focus{border-color:var(--blue);}
 
 .pitch-player{
   position:absolute;transform:translate(-50%,-50%);
-  min-width:36px;height:36px;padding:0 6px;border-radius:18px;
+  min-width:40px;height:40px;padding:0 8px;border-radius:20px;
   display:flex;align-items:center;justify-content:center;
-  font-size:.6rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);
+  font-size:.7rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);
   cursor:pointer;user-select:none;z-index:2;white-space:nowrap;
   transition:left .3s,top .3s;
+}
+/* Larger dots on setup pitch */
+#setupPitchPlayers .pitch-player{
+  min-width:52px;height:44px;font-size:.8rem;padding:0 10px;border-radius:22px;
 }
 .pitch-player.field-dot{background:var(--green);border:2px solid #2ea043;}
 .pitch-player.goalie-dot{background:var(--yellow);border:2px solid #b88a1a;color:#000;text-shadow:none;}
@@ -706,6 +711,55 @@ var manualSubFieldSelected = [];
 var manualSubBenchSelected = [];
 var positionAssignments = {};
 
+function saveGame() {
+  if (game) {
+    // Store wallclock time so we can reconstruct on reload
+    game._savedAt = Date.now();
+    localStorage.setItem('st_activeGame', JSON.stringify(game));
+  } else {
+    localStorage.removeItem('st_activeGame');
+  }
+}
+
+function loadGame() {
+  var saved = localStorage.getItem('st_activeGame');
+  if (!saved) return false;
+  try {
+    game = JSON.parse(saved);
+    if (game.halfRunning && game._savedAt) {
+      // Timer was running - calculate how much time passed since save
+      var elapsedSinceLeave = Math.round((Date.now() - game._savedAt) / 1000);
+      // Advance the half timer
+      game.halfRemaining = Math.max(0, game.halfRemaining - elapsedSinceLeave);
+      // Advance player times
+      game.players.forEach(function(p) {
+        if (p.status === 'field' && p.lastOnFieldAt) {
+          p.fieldTime += elapsedSinceLeave;
+          p.lastOnFieldAt = Date.now();
+        } else if (p.status === 'goalie' && p.lastOnFieldAt) {
+          p.goalieTime += elapsedSinceLeave;
+          p.lastOnFieldAt = Date.now();
+        }
+      });
+      // Check if half ended while away
+      if (game.halfRemaining <= 0) {
+        game.halfRunning = false;
+        game.players.forEach(function(p) { p.lastOnFieldAt = null; });
+      } else {
+        // Restart timers
+        halfTimer = setInterval(tickHalf, 1000);
+        timeTracker = setInterval(trackTime, 1000);
+        // Regenerate schedule for remaining time
+        if (game.subMode === 'auto') generateAutoSchedule();
+      }
+    }
+    return true;
+  } catch(e) {
+    localStorage.removeItem('st_activeGame');
+    return false;
+  }
+}
+
 // ==================== FORMATIONS ====================
 var FORMATIONS = {
   '1-3-3': {
@@ -997,10 +1051,20 @@ function onSetupPitchTap(posIndex) {
 
   document.getElementById('posPickerTitle').textContent = 'Assign ' + pos.role + ' Position';
   document.getElementById('posPickerSubtitle').textContent = 'Select a player for this position';
+  // Find which players are already assigned to other positions
+  var assignedIds = [];
+  for (var key in setupPositions) {
+    if (parseInt(key) !== posIndex && setupPositions[key]) assignedIds.push(setupPositions[key]);
+  }
+  // Also count goalie assignments
+  if (goalie1Id && posIndex !== 0) assignedIds.push(goalie1Id);
+
   var list = document.getElementById('posPickerList');
   list.innerHTML = avail.map(function(p) {
-    return '<button class="pos-picker-item" onclick="pickSetupPlayer(\'' + p.id + '\',' + posIndex + ')">' +
-      esc(p.name) + '</button>';
+    var taken = assignedIds.indexOf(p.id) >= 0;
+    return '<button class="pos-picker-item" onclick="pickSetupPlayer(\'' + p.id + '\',' + posIndex + ')"' +
+      (taken ? ' style="opacity:.35;color:var(--text3);"' : '') + '>' +
+      esc(p.name) + (taken ? ' <span style="font-size:.65rem;">(assigned)</span>' : '') + '</button>';
   }).join('');
   document.getElementById('posPickerOverlay').classList.add('active');
 }
@@ -1109,6 +1173,7 @@ function assignHalfPositions(half) {
 // ==================== GAME RENDERING ====================
 function renderGame() {
   if (!game) return;
+  saveGame();
 
   document.getElementById('timerHalfIndicator').textContent = 'HALF ' + game.half;
   document.getElementById('gameTimerValue').textContent = fmt(Math.max(0, game.halfRemaining));
@@ -1155,7 +1220,8 @@ function renderGamePlayers() {
   document.getElementById('fieldCount').textContent = field.length;
   document.getElementById('benchCount').textContent = bench.length;
 
-  bench.sort(function(a, b) { return a.fieldTime - b.fieldTime; });
+  field.sort(function(a, b) { return b.fieldTime - a.fieldTime; }); // most time at top
+  bench.sort(function(a, b) { return a.fieldTime - b.fieldTime; }); // least time at top
 
   // Determine who's due for sub soon (next auto sub event)
   var dueSoonIds = [];
@@ -1395,12 +1461,38 @@ function startHalf() {
 function tickHalf() {
   if (!game || !game.halfRunning) return;
   game.halfRemaining--;
+  // Save periodically so refresh/navigate away doesn't lose state
+  if (game.halfRemaining % 5 === 0) saveGame();
 
-  // Update timer display directly (no full re-render)
-  document.getElementById('gameTimerValue').textContent = fmt(Math.max(0, game.halfRemaining));
+  // Update timer display - goes negative for stoppage time
+  var timerEl = document.getElementById('gameTimerValue');
+  var labelEl = document.getElementById('gameTimerLabel');
+  if (game.halfRemaining > 0) {
+    timerEl.textContent = fmt(game.halfRemaining);
+    timerEl.style.color = '';
+    labelEl.textContent = 'remaining';
+  } else {
+    timerEl.textContent = '+' + fmt(Math.abs(game.halfRemaining));
+    timerEl.style.color = 'var(--red)';
+    labelEl.textContent = 'stoppage time';
+  }
 
-  // Check auto subs
-  if (game.subMode === 'auto' && nextSubIndex < subSchedule.length) {
+  // Show End Half button when time is up
+  if (game.halfRemaining <= 0) {
+    var btn = document.getElementById('btnStartHalf');
+    btn.textContent = 'End Half ' + game.half;
+    btn.style.display = '';
+    btn.onclick = function() { endHalf(); };
+    document.getElementById('gameTimerBtn').style.display = '';
+    // Beep once when first entering stoppage
+    if (game.halfRemaining === 0) {
+      playBeep(440, 0.3, 2);
+      vibrate([300, 100, 300]);
+    }
+  }
+
+  // Check auto subs (only in regular time)
+  if (game.halfRemaining > 0 && game.subMode === 'auto' && nextSubIndex < subSchedule.length) {
     var ev = subSchedule[nextSubIndex];
     if (game.halfRemaining <= ev.atRemaining) {
       executeAutoSub(ev);
@@ -1412,8 +1504,6 @@ function tickHalf() {
   if (nextSubIndex >= subSchedule.length) {
     document.getElementById('subTimerSection').style.display = 'none';
   }
-
-  if (game.halfRemaining <= 0) endHalf();
 }
 
 function trackTime() {
@@ -1777,6 +1867,7 @@ function finishGame() {
   gameHistory.unshift(record);
   saveHistory();
   game = null;
+  saveGame();
   showScreen('setup');
 }
 
@@ -1894,7 +1985,17 @@ function renderCumulativeStats() {
 }
 
 // ==================== INIT ====================
-renderSetup();
+if (loadGame()) {
+  showScreen('game');
+  renderGame();
+  // If half ended while away, show the appropriate overlay
+  if (game && !game.halfRunning && game.halfRemaining <= 0) {
+    if (game.half === 1) showHalftime();
+    else showGameOver();
+  }
+} else {
+  renderSetup();
+}
 </script>
 </body>
 </html>
