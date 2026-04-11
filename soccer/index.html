@@ -1136,10 +1136,7 @@ function startGame() {
     errEl.textContent = 'Please select goalies for both halves.';
     errEl.style.display = 'block'; return;
   }
-  if (goalie1Id === goalie2Id) {
-    errEl.textContent = 'Goalies for each half should be different players.';
-    errEl.style.display = 'block'; return;
-  }
+  // Same goalie both halves is OK (single goalie teams)
   errEl.style.display = 'none';
 
   localStorage.setItem('st_config', JSON.stringify({
