@@ -449,7 +449,7 @@ input:focus,select:focus{border-color:var(--blue);}
       <div class="form-row">
         <div class="form-group">
           <label>Rotations per player</label>
-          <input type="number" id="cfgRotationsPerPlayer" value="1" min="1" max="5">
+          <input type="number" id="cfgRotationsPerPlayer" value="2" min="1" max="5">
           <div style="font-size:.65rem;color:var(--text3);margin-top:2px;">How many times each player sits out per game</div>
         </div>
       </div>
@@ -502,13 +502,13 @@ input:focus,select:focus{border-color:var(--blue);}
 <div id="screen-game" class="screen">
   <div class="header" style="padding:10px 14px;">
     <div class="header-row">
-      <button class="header-btn" onclick="confirmEndGame()" style="font-size:.75rem;padding:6px 10px;">End</button>
+      <button class="header-btn" onclick="confirmEndHalf()" style="font-size:.75rem;padding:6px 10px;" id="btnEndHalf">End Half</button>
       <div class="game-timer">
         <div class="half-indicator" id="timerHalfIndicator">HALF 1</div>
         <div class="timer-value" id="gameTimerValue">20:00</div>
         <div class="timer-label" id="gameTimerLabel">remaining</div>
       </div>
-      <div style="width:50px;"></div>
+      <button class="header-btn" onclick="confirmEndGame()" style="font-size:.75rem;padding:6px 10px;color:var(--red);">End Game</button>
     </div>
   </div>
 
@@ -1212,6 +1212,7 @@ function renderGame() {
   saveGame();
 
   document.getElementById('timerHalfIndicator').textContent = 'HALF ' + game.half;
+  document.getElementById('btnEndHalf').textContent = game.half === 1 ? 'End Half' : 'End Half 2';
   document.getElementById('gameTimerValue').textContent = fmt(Math.max(0, game.halfRemaining));
   var btn = document.getElementById('btnStartHalf');
   var label = document.getElementById('gameTimerLabel');
@@ -1949,15 +1950,24 @@ function finishGame() {
   showScreen('setup');
 }
 
+function confirmEndHalf() {
+  if (!game) return;
+  if (!game.halfRunning && game.half === 1 && game.halfRemaining === game.halfLengthSecs) return; // hasn't started
+  game.halfRunning = false;
+  clearInterval(halfTimer); clearInterval(timeTracker);
+  halfTimer = null; timeTracker = null;
+  flushTime();
+  endHalf();
+}
+
 function confirmEndGame() {
   if (!game) return;
-  // If game isn't running, just end immediately
   if (!game.halfRunning) {
     flushTime();
     showGameOver();
     return;
   }
-  showConfirm('End Game?', 'This will end the current game.', function() {
+  showConfirm('End Game?', 'This will end the game and save results.', function() {
     game.halfRunning = false;
     clearInterval(halfTimer); clearInterval(timeTracker);
     halfTimer = null; timeTracker = null;
