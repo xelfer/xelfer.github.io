@@ -1,6 +1,6 @@
 {
-  "name": "SubTrakt",
-  "short_name": "SubTrakt",
+  "name": "SubTrack",
+  "short_name": "SubTrack",
   "description": "Soccer substitution tracker for fair playing time",
   "start_url": "./index.html",
   "scope": "./",

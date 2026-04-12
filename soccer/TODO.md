@@ -1,4 +1,4 @@
-# SubTrakt - Product Roadmap
+# SubTrack - Product Roadmap
 
 ## Phase 1: PWA & App Store Validation
 - [ ] Add service worker for true offline support
