@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1b2e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SubTrakt">
+<link rel="manifest" href="manifest.json">
 <title>SubTrakt - Soccer Substitution Manager</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -2088,6 +2093,40 @@ function renderCumulativeStats() {
     }).join('') +
     '</tbody></table></div>';
 }
+
+// ==================== PWA / WAKE LOCK ====================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.log('SW reg failed', e); });
+  });
+}
+
+var wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {}
+}
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && game && game.halfRunning) requestWakeLock();
+});
+
+// Hook into startHalf to request wake lock
+var _origStartHalf = startHalf;
+startHalf = function() {
+  _origStartHalf.apply(this, arguments);
+  requestWakeLock();
+};
+var _origEndHalf = endHalf;
+endHalf = function() {
+  releaseWakeLock();
+  _origEndHalf.apply(this, arguments);
+};
 
 // ==================== INIT ====================
 if (loadGame()) {
