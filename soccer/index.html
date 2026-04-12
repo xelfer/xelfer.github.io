@@ -1304,13 +1304,11 @@ function playerCard(p, cls, dueSoon) {
 
   if (p.status === 'field' && game.halfRunning) {
     if (isProtected) {
-      // Only allow injury, not benching
-      actions = '<span style="font-size:.6rem;color:var(--blue);white-space:nowrap;">GK H' + (game.half === 1 ? '2' : '1') + '</span>' +
-        '<button class="btn btn-sm btn-danger" onclick="injurePlayer(\'' + p.id + '\')" style="padding:5px;">Inj</button>';
+      actions = '<button class="btn btn-sm btn-danger" onclick="injurePlayer(\'' + p.id + '\')" style="padding:5px;">Inj</button>';
     } else if (isFieldSelected) {
       actions = '<button class="btn btn-sm btn-warning" onclick="toggleFieldSelect(\'' + p.id + '\')">Cancel</button>';
     } else {
-      actions = '<button class="btn btn-sm btn-secondary" onclick="toggleFieldSelect(\'' + p.id + '\')">Bench</button>' +
+      actions = '<button class="btn btn-sm btn-secondary" onclick="toggleFieldSelect(\'' + p.id + '\')">Sub Out</button>' +
         '<button class="btn btn-sm btn-danger" onclick="injurePlayer(\'' + p.id + '\')" style="padding:5px;">Inj</button>';
     }
   } else if (p.status === 'bench' && game.halfRunning) {
@@ -1326,8 +1324,12 @@ function playerCard(p, cls, dueSoon) {
   var extraCls = selected ? ' selected-card' : '';
   if (dueSoon) extraCls += ' due-soon-card';
 
+  var gkBadge = isProtected
+    ? ' <span style="font-size:.55rem;color:var(--blue);font-weight:700;background:var(--blue-bg);padding:1px 5px;border-radius:3px;letter-spacing:.03em;">GK H' + (game.half === 1 ? '2' : '1') + '</span>'
+    : '';
+
   return '<div class="game-player ' + cls + extraCls + '" data-player-id="' + p.id + '">' +
-    '<div class="gp-name">' + esc(p.name) + (dueSoon ? ' <span style="font-size:.6rem;color:var(--purple);">NEXT</span>' : '') + '</div>' +
+    '<div class="gp-name">' + esc(p.name) + gkBadge + (dueSoon ? ' <span style="font-size:.6rem;color:var(--purple);">NEXT</span>' : '') + '</div>' +
     '<div class="gp-time" data-time-for="' + p.id + '">' + time + '</div>' +
     '<div class="gp-actions">' + actions + '</div>' +
   '</div>';
