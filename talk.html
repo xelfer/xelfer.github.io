@@ -6,28 +6,43 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
 <style>
-  .reveal { font-size: 32px; }
-  .reveal h1 { font-size: 2.2em; }
-  .reveal h2 { font-size: 1.5em; text-transform: none; letter-spacing: -0.01em; margin-bottom: 0.6em; }
+  :root {
+    --aws: #ff9900;
+    --strava: #fc4c02;
+    --win: #90be6d;
+    --gold: #f9c74f;
+    --dim: #999;
+  }
+  .reveal { font-size: 32px; background: #0e0e0e; }
+  .reveal h1 { font-size: 2.2em; background: linear-gradient(90deg, var(--strava), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .reveal h2 { font-size: 1.5em; text-transform: none; letter-spacing: -0.01em; margin-bottom: 0.6em; color: var(--gold); }
   .reveal h3 { text-transform: none; }
   .reveal p { margin: 0.4em 0; }
   .reveal pre { box-shadow: none; font-size: 0.5em; }
   .reveal code { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-  .reveal .subtitle { color: #999; font-weight: 400; margin-top: -0.5em; }
+  .reveal .subtitle { color: var(--dim); font-weight: 400; margin-top: -0.5em; }
   .reveal .caption { color: #888; font-size: 0.6em; margin-top: 0.6em; }
   .reveal .big { font-size: 1.5em; font-weight: 700; }
   .reveal .kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.35em 0.9em; text-align: left; font-size: 0.75em; }
-  .reveal .kv .k { color: #999; }
+  .reveal .kv .k { color: var(--dim); }
   .reveal .kv .v { font-family: ui-monospace, monospace; }
   .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.55em; line-height: 1.4; text-align: left; white-space: pre; color: #ddd; }
-  .reveal .diagram .aws { color: #f9c74f; font-weight: 700; }
-  .reveal .win  { color: #90be6d; font-weight: 700; }
-  .reveal .cost { color: #f9c74f; font-weight: 700; }
-  .reveal .aws  { color: #f9c74f; font-weight: 700; }
-  .reveal .quiet { color: #888; }
+  .reveal .diagram .aws { color: var(--aws); font-weight: 700; }
+  .reveal .win  { color: var(--win); font-weight: 700; }
+  .reveal .cost { color: var(--gold); font-weight: 700; }
+  .reveal .aws  { color: var(--aws); font-weight: 700; }
+  .reveal .strava { color: var(--strava); font-weight: 700; }
+  .reveal .quiet { color: var(--dim); }
   .reveal ul, .reveal ol { font-size: 0.85em; }
   .reveal ul li, .reveal ol li { margin: 0.3em 0; }
-  .reveal blockquote { border-left: 3px solid #f9c74f; padding: 0.3em 0.7em; font-style: italic; font-size: 0.8em; }
+  .reveal blockquote { border-left: 3px solid var(--gold); padding: 0.3em 0.7em; font-style: italic; font-size: 0.8em; }
+  .reveal .kv .k.aws { color: var(--aws); }
+  .reveal .hero-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.28; background-size: cover; background-position: center; }
+  .reveal section.hero { padding: 1em; }
+  .reveal .hero-content { position: relative; z-index: 1; }
+  .reveal img.inline { border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .reveal .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; align-items: center; }
+  .reveal .strava-card { background: rgba(252,76,2,0.08); border: 1px solid rgba(252,76,2,0.35); border-radius: 12px; padding: 0.6em 0.9em; }
 </style>
 </head>
 <body>
@@ -41,23 +56,26 @@
   <p class="caption">Nick Triantafillou · AWS Meetup · Aug 6 2026</p>
 </section>
 
-<!-- 2: The problem -->
-<section>
-  <h2>The problem</h2>
-  <p>Training for the Sydney Marathon.</p>
-  <p>I want a coach in my ear during runs — real-time cues on pace, HR, cadence, milestones, "push through it."</p>
-  <p class="fragment quiet" style="margin-top: 1em;">On <em>my</em> plan, with <em>my</em> HR ceiling, with rules I wrote.</p>
+<!-- 2: The problem — with selfie background -->
+<section class="hero">
+  <div class="hero-bg" style="background-image: url('assets/talk/selfie-coast.jpg');"></div>
+  <div class="hero-content">
+    <h2>The problem</h2>
+    <p>Training for the <span class="strava">Sydney Marathon</span>.</p>
+    <p>I want a coach in my ear during runs — real-time cues on pace, HR, cadence, milestones, <em>"push through it."</em></p>
+    <p class="fragment quiet" style="margin-top: 1em;">On <em>my</em> plan, with <em>my</em> HR ceiling, with rules I wrote.</p>
+  </div>
 </section>
 
 <!-- 3: What it does -->
 <section>
   <h2>What it does</h2>
   <ol style="max-width: 620px; margin: 0 auto; text-align: left;">
-    <li>Watch pings Garmin → LiveTrack URL emailed to me</li>
+    <li>Watch pings Garmin → LiveTrack URL emailed</li>
     <li>System spots the email, spins up a coaching session</li>
     <li>Polls LiveTrack every 30s for fresh trackpoints</li>
     <li>Rules engine decides when to say something</li>
-    <li>TTS to phone → Bluetooth headphones, mid-run</li>
+    <li>TTS to phone → <span class="strava">Bluetooth headphones</span>, mid-run</li>
   </ol>
 </section>
 
@@ -164,25 +182,54 @@ ecs.run_task(
 03:01 session inactive — exiting</code></pre>
 </section>
 
-<!-- 10: Non-obvious lessons -->
+<!-- 10: Real training context — Strava screenshot -->
+<section>
+  <h2>Why bother</h2>
+  <div class="two-col">
+    <div>
+      <p class="strava-card"><span class="strava">STRAVA</span> · Fri Jul 31<br><strong>22.50 km · 2:52:21 · 7:40/km</strong><br>PR: Bellambi → Towradgi<br>PR: Murray Rd Climb<br>Local Legend: Salvaging Andrew</p>
+      <p class="caption" style="margin-top: 1em;">Coach fires for real runs like this. Longer runs = more cues, more value. Peak run 3 weeks away: <span class="win">28 km.</span></p>
+    </div>
+    <div>
+      <img class="inline" src="assets/talk/strava-22k.jpg" style="max-height: 520px;" alt="Strava 22.5km run map along Wollongong coast">
+    </div>
+  </div>
+</section>
+
+<!-- 11: Non-obvious lessons -->
 <section>
   <h2>Lessons</h2>
   <ul style="max-width: 720px; margin: 0 auto;">
-    <li><strong>Task-per-session works.</strong> Fargate cold-start is invisible against a 45min run.</li>
-    <li class="fragment"><strong>SSM &gt; env vars for secrets.</strong> Injected at container start — token never in the image.</li>
-    <li class="fragment"><strong>CloudWatch is enough observability</strong> for this shape. One task = one log stream = whole run.</li>
-    <li class="fragment"><strong>AWS was easy.</strong> Hard problem was routing TTS past Spotify to Android's music stream.</li>
+    <li><strong class="win">Task-per-session works.</strong> Fargate cold-start is invisible against a 45min run.</li>
+    <li class="fragment"><strong class="aws">SSM &gt; env vars for secrets.</strong> Injected at container start — token never in the image.</li>
+    <li class="fragment"><strong class="aws">CloudWatch is enough observability</strong> for this shape. One task = one log stream = whole run.</li>
+    <li class="fragment"><strong class="gold">AWS was easy.</strong> Hard problem was routing TTS past Spotify to Android's music stream.</li>
   </ul>
 </section>
 
-<!-- 11: Fin -->
+<!-- 12: Fin — with QR -->
 <section>
   <h2 class="big">Fin.</h2>
-  <p class="quiet" style="margin-top: 1em;">
-    <code>nickt.com.au/running</code> — coach dashboard<br>
-    <code>nickt.com.au/talk.html</code> — this deck
-  </p>
-  <p class="fragment" style="margin-top: 1.5em;">Questions?</p>
+  <div class="two-col" style="margin-top: 1em;">
+    <div>
+      <p class="quiet" style="text-align: left;">
+        <code>nickt.com.au/running</code><br>
+        <span class="caption">coach dashboard</span>
+      </p>
+      <p class="quiet" style="text-align: left; margin-top: 1.5em;">
+        <code>nickt.com.au/talk.html</code><br>
+        <span class="caption">this deck</span>
+      </p>
+      <p class="fragment" style="text-align: left; margin-top: 2em; font-size: 1.4em; color: var(--gold);">Questions?</p>
+    </div>
+    <div style="text-align: center;">
+      <img class="inline"
+           src="https://api.qrserver.com/v1/create-qr-code/?size=340x340&margin=8&data=https%3A%2F%2Fnickt.com.au%2Ftalk.html&color=0e0e0e&bgcolor=f9c74f"
+           alt="QR code — nickt.com.au/talk.html"
+           style="width: 320px; height: 320px;">
+      <p class="caption" style="margin-top: 0.4em;">scan the deck →</p>
+    </div>
+  </div>
 </section>
 
 </div>
