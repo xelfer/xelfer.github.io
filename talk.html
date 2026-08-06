@@ -249,14 +249,19 @@ ecs.run_task(
     progress: true,
     slideNumber: 'c/t',
     transition: 'fade',
-    // 16:9 base — matches most modern screens; reveal scales to fit,
-    // preserving aspect (some letterboxing on portrait phones is unavoidable).
     width: 1600,
     height: 900,
     margin: 0.02,
     minScale: 0.1,
     maxScale: 10.0,
     plugins: [ RevealHighlight ],
+  });
+
+  // Tap-to-advance for mobile: left third = prev, rest = next.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a, button, .controls, .progress, .slide-number, input, textarea, code, pre')) return;
+    const x = e.clientX;
+    if (x < window.innerWidth * 0.30) Reveal.prev(); else Reveal.next();
   });
 </script>
 </body>
