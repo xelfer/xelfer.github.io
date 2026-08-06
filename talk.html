@@ -181,13 +181,19 @@ ecs.run_task(
     <div class="stat" style="border-left-color: var(--aws);"><div class="label">Cold start</div><div class="value">~20 s</div></div>
     <div class="stat" style="border-left-color: var(--win);"><div class="label">Cost</div><div class="value">$0.02</div></div>
   </div>
-  <p style="margin: 0.6em 0;"><span class="pill pill-aws">FARGATE</span> ran <strong>55 min</strong>, exit 0. <span class="pill pill-win">5 cues</span> delivered live.</p>
-  <pre style="font-size: 0.42em; margin-top: 0.8em; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto;"><code>12:36 AEST  '30min mark: 3.0km, HR 97. Fuel + hydrate.'
-12:45 AEST  'Cadence 158spm — lift the feet, target 165+'
-12:48 AEST  'Pace 4:56/km — dial back to 7:15+'   ← false positive, shipped a fix same run
-12:53 AEST  '5km done. HR 141, keep it honest.'
-12:59 AEST  'HR 165 for 1min+ — ease 30 seconds'
-13:01 AEST  session inactive — exiting</code></pre>
+  <p style="margin: 0.6em 0;"><span class="pill pill-aws">FARGATE</span> ran <strong>55 min</strong>, exit 0. <span class="pill pill-win">10 cues</span> delivered live.</p>
+  <pre style="font-size: 0.38em; margin-top: 0.6em; text-align: left; max-width: 1100px; margin-left: auto; margin-right: auto;"><code>12:06  Cadence 158spm — lift the feet, target 165+
+12:13  Final 5km. This is the deposit for race day. Grind.
+12:20  Pace 5:57/km — dial back to 7:15+
+12:25  Pace 5:46/km — dial back to 7:15+
+12:30  Halfway — 3km down, 3 to go. How's the head?
+12:36  30min mark: 3.0km, HR 97. Fuel + hydrate.
+12:45  Cadence 158spm — lift the feet, target 165+
+12:48  Pace 4:56/km — dial back to 7:15+     ← false positive
+12:53  5km done. HR 141, keep it honest.
+12:59  HR 165 for 1min+ — ease 30 seconds
+13:01  session inactive — exiting</code></pre>
+  <p class="caption" style="margin-top: 0.4em;">3 pace-fast cues were spikes on red-light resumption. Fixed rule (rolling-60s pace) shipped same run.</p>
 </section>
 
 <!-- 10: Why bother — personal utility -->
