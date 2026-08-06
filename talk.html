@@ -6,25 +6,28 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
 <style>
-  .reveal h1, .reveal h2, .reveal h3 { text-transform: none; letter-spacing: -0.01em; }
-  .reveal pre { box-shadow: none; font-size: 0.55em; }
+  .reveal { font-size: 32px; }
+  .reveal h1 { font-size: 2.2em; }
+  .reveal h2 { font-size: 1.5em; text-transform: none; letter-spacing: -0.01em; margin-bottom: 0.6em; }
+  .reveal h3 { text-transform: none; }
+  .reveal p { margin: 0.4em 0; }
+  .reveal pre { box-shadow: none; font-size: 0.5em; }
   .reveal code { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-  .reveal .fragment.highlight-current { transition: color 0.2s ease; }
-  .reveal .highlight-current.current-fragment { color: #f9c74f; }
   .reveal .subtitle { color: #999; font-weight: 400; margin-top: -0.5em; }
-  .reveal .caption { color: #888; font-size: 0.65em; margin-top: 0.4em; }
-  .reveal .big { font-size: 1.6em; font-weight: 700; }
-  .reveal .kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.4em 1em; text-align: left; }
+  .reveal .caption { color: #888; font-size: 0.6em; margin-top: 0.6em; }
+  .reveal .big { font-size: 1.5em; font-weight: 700; }
+  .reveal .kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.35em 0.9em; text-align: left; font-size: 0.75em; }
   .reveal .kv .k { color: #999; }
   .reveal .kv .v { font-family: ui-monospace, monospace; }
-  .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.6em; line-height: 1.4; text-align: left; white-space: pre; color: #ddd; }
+  .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.55em; line-height: 1.4; text-align: left; white-space: pre; color: #ddd; }
   .reveal .diagram .aws { color: #f9c74f; font-weight: 700; }
   .reveal .win  { color: #90be6d; font-weight: 700; }
   .reveal .cost { color: #f9c74f; font-weight: 700; }
   .reveal .aws  { color: #f9c74f; font-weight: 700; }
   .reveal .quiet { color: #888; }
-  .reveal ul li { margin: 0.35em 0; }
-  .reveal blockquote { border-left: 3px solid #f9c74f; padding: 0.4em 0.8em; font-style: italic; font-size: 0.9em; }
+  .reveal ul, .reveal ol { font-size: 0.85em; }
+  .reveal ul li, .reveal ol li { margin: 0.3em 0; }
+  .reveal blockquote { border-left: 3px solid #f9c74f; padding: 0.3em 0.7em; font-style: italic; font-size: 0.8em; }
 </style>
 </head>
 <body>
@@ -41,147 +44,134 @@
 <!-- 2: The problem -->
 <section>
   <h2>The problem</h2>
-  <p>I'm training for the Sydney Marathon.</p>
+  <p>Training for the Sydney Marathon.</p>
   <p>I want a coach in my ear during runs — real-time cues on pace, HR, cadence, milestones, "push through it."</p>
-  <p class="fragment quiet" style="margin-top: 1.5em;">Nike Run Club, Runna, Garmin all do a version of voice coaching.<br>None coach <em>my</em> plan, using <em>my</em> HR ceiling, in <em>my</em> voice.</p>
+  <p class="fragment quiet" style="margin-top: 1em;">In <em>my</em> voice, on <em>my</em> plan, with <em>my</em> HR ceiling.</p>
 </section>
 
 <!-- 3: What it does -->
 <section>
   <h2>What it does</h2>
-  <ol style="max-width: 650px; margin: 0 auto; text-align: left;">
+  <ol style="max-width: 620px; margin: 0 auto; text-align: left;">
     <li>Watch pings Garmin → LiveTrack URL emailed to me</li>
     <li>System spots the email, spins up a coaching session</li>
     <li>Polls LiveTrack every 30s for fresh trackpoints</li>
     <li>Rules engine decides when to say something</li>
-    <li>TTS to my phone → Bluetooth headphones, mid-run</li>
+    <li>TTS to phone → Bluetooth headphones, mid-run</li>
   </ol>
-  <p class="caption fragment" style="margin-top: 1.5em;">
-    Today it fired 5 real cues during my 6km lunch run — pace, HR ceiling, cadence, milestone, time check.
-  </p>
 </section>
 
 <!-- 4: Architecture (AWS highlighted) -->
 <section>
   <h2>Architecture</h2>
   <div class="diagram">
-Garmin watch → LiveTrack email (Gmail)
+Garmin watch → LiveTrack email
         ↓
-Gmail poller (small daemon on my NAS)
+Gmail poller (small daemon on NAS)
         ↓
-<span class="aws">boto3 → ecs.run_task()  ← Fargate task spawns per session</span>
+<span class="aws">boto3 → ecs.run_task()</span>
         ↓
-<span class="aws">Fargate container</span>: polls LiveTrack, runs rules engine
+<span class="aws">Fargate container</span>: polls + runs rules
         ↓
-HTTPS POST → Home Assistant (via Nabu Casa public URL)
+HTTPS POST → Home Assistant (Nabu Casa)
         ↓
-Phone TTS → Shokz OpenRun Pro (bone-conduction BT)
+Phone TTS → Shokz BT headphones
   </div>
-  <p class="caption fragment">AWS holds the coaching compute. Everything else is glue.</p>
+  <p class="caption">AWS holds the coaching compute. Everything else is glue.</p>
 </section>
 
 <!-- 5: What AWS is doing -->
 <section>
   <h2>What AWS is doing</h2>
-  <div class="kv" style="font-size: 0.85em; margin: 1em auto; max-width: 720px;">
-    <span class="k aws">Fargate</span>       <span class="v">Runs the coaching container. 0.25 vCPU / 512MB. On-demand per session.</span>
-    <span class="k aws">ECR</span>           <span class="v">Hosts the container image (<code>live-coach:latest</code>, 139MB).</span>
-    <span class="k aws">SSM Parameter Store</span> <span class="v">Injects the HA API token as a SecureString — never touches the image.</span>
-    <span class="k aws">CloudWatch Logs</span> <span class="v">Every cue, every trackpoint poll, every session end.</span>
-    <span class="k aws">IAM</span>           <span class="v">Task role + execution role, minimal-privilege.</span>
-    <span class="k aws">Default VPC</span>   <span class="v">Public subnets, task assigned public IP for outbound calls.</span>
+  <div class="kv" style="margin: 0.5em auto; max-width: 720px;">
+    <span class="k aws">Fargate</span>       <span class="v">Runs the container per session</span>
+    <span class="k aws">ECR</span>           <span class="v">Hosts the image (139MB)</span>
+    <span class="k aws">SSM Params</span>    <span class="v">HA token as SecureString</span>
+    <span class="k aws">CloudWatch</span>    <span class="v">Every cue, every poll, every session</span>
+    <span class="k aws">IAM</span>           <span class="v">Task + execution roles</span>
   </div>
 </section>
 
 <!-- 6: The pattern -->
 <section>
   <h2 class="big win">Task-per-session</h2>
-  <ul>
-    <li>Fargate container spawns when a LiveTrack email arrives</li>
-    <li>Runs for exactly the duration of the run</li>
+  <ul style="max-width: 600px; margin: 0 auto;">
+    <li>Container spawns when a LiveTrack email arrives</li>
+    <li>Runs for the duration of the run</li>
     <li>Exits when Garmin closes the session</li>
-    <li class="fragment cost">Zero idle infrastructure. My "backend" doesn't exist most of the day.</li>
+    <li class="fragment cost">Zero idle infrastructure.</li>
   </ul>
-  <blockquote class="fragment" style="margin-top: 1.5em;">
-    Task-per-session &gt; always-on for user-triggered, ephemeral workloads.<br>
-    Fargate's cold-start is fast enough that you can start a service <em>when the user acts</em>.
-  </blockquote>
 </section>
 
 <!-- 7: The IaC -->
 <section>
   <h2>~50 lines of CDK Python</h2>
   <pre><code class="language-python">class LiveCoachStack(Stack):
-    def __init__(self, scope, id, **kwargs):
-        super().__init__(scope, id, **kwargs)
+  def __init__(self, scope, id, **kwargs):
+    super().__init__(scope, id, **kwargs)
 
-        repo = ecr.Repository(self, "LiveCoachRepo", repository_name="live-coach")
-        vpc = ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True)
-        cluster = ecs.Cluster(self, "LiveCoachCluster", vpc=vpc)
-        logs_grp = logs.LogGroup(self, "Logs", retention=logs.RetentionDays.ONE_WEEK)
-        ha_token = ssm.StringParameter.from_secure_string_parameter_attributes(
-            self, "HaToken", parameter_name="/live-coach/ha-token"
-        )
+    repo = ecr.Repository(self, "Repo", repository_name="live-coach")
+    vpc = ec2.Vpc.from_lookup(self, "Vpc", is_default=True)
+    cluster = ecs.Cluster(self, "Cluster", vpc=vpc)
+    logs_grp = logs.LogGroup(self, "Logs")
+    ha_token = ssm.StringParameter.from_secure_string_parameter_attributes(
+      self, "HaToken", parameter_name="/live-coach/ha-token")
 
-        task = ecs.FargateTaskDefinition(self, "Task", cpu=256, memory_limit_mib=512)
-        task.add_container("orchestrator",
-            image=ecs.ContainerImage.from_ecr_repository(repo, "latest"),
-            logging=ecs.LogDrivers.aws_logs(stream_prefix="orch", log_group=logs_grp),
-            secrets={"HA_TOKEN": ecs.Secret.from_ssm_parameter(ha_token)},
-        )
+    task = ecs.FargateTaskDefinition(self, "Task", cpu=256, memory_limit_mib=512)
+    task.add_container("orchestrator",
+      image=ecs.ContainerImage.from_ecr_repository(repo, "latest"),
+      logging=ecs.LogDrivers.aws_logs(log_group=logs_grp),
+      secrets={"HA_TOKEN": ecs.Secret.from_ssm_parameter(ha_token)})
   </code></pre>
-  <p class="caption">ECR + Fargate cluster + task def + IAM + logs + secret injection.</p>
 </section>
 
 <!-- 8: How a session fires -->
 <section>
   <h2>Firing a session</h2>
   <pre><code class="language-python">import boto3
-
-ecs = boto3.client("ecs", region_name="ap-southeast-2")
+ecs = boto3.client("ecs")
 ecs.run_task(
-    cluster="live-coach",
-    taskDefinition="live-coach",
-    launchType="FARGATE",
-    networkConfiguration={"awsvpcConfiguration": {
-        "subnets": [...], "assignPublicIp": "ENABLED"}},
-    overrides={"containerOverrides": [{
-        "name": "orchestrator",
-        "command": ["--url", livetrack_url, "--target-km", "6"],
-        "environment": [{"name": "HA_URL", "value": nabu_casa_url}],
-    }]},
+  cluster="live-coach",
+  taskDefinition="live-coach",
+  launchType="FARGATE",
+  networkConfiguration={"awsvpcConfiguration": {
+    "subnets": [...], "assignPublicIp": "ENABLED"}},
+  overrides={"containerOverrides": [{
+    "name": "orchestrator",
+    "command": ["--url", livetrack_url],
+    "environment": [{"name": "HA_URL", "value": nabu_casa_url}],
+  }]},
 )
   </code></pre>
-  <p class="caption">One function call. Container is running ~15s later. That's the whole handoff.</p>
+  <p class="caption">One call. Container running ~15s later.</p>
 </section>
 
 <!-- 9: Today's actual run -->
 <section>
   <h2>Today's lunch run</h2>
-  <div class="kv" style="font-size: 0.85em; margin: 1em auto; max-width: 700px;">
-    <span class="k">Run:</span>          <span class="v">6.01 km, 43:38, 7:15/km, HR 141/166</span>
-    <span class="k">Task fired at:</span> <span class="v">12:06:07 (Gmail poll → ecs.run_task)</span>
-    <span class="k">Cold start:</span>    <span class="v">~20 sec</span>
-    <span class="k">Task lifecycle:</span> <span class="v">55 min, exit code 0</span>
-    <span class="k">Cues delivered:</span> <span class="v">5 live to Shokz via Nabu Casa</span>
-    <span class="k">Cost:</span>          <span class="v cost">~AUD $0.02</span>
+  <div class="kv" style="margin: 0.3em auto; max-width: 680px;">
+    <span class="k">Run:</span>          <span class="v">6.01 km, 43:38, 7:15/km</span>
+    <span class="k">Task fired:</span>   <span class="v">12:06:07</span>
+    <span class="k">Cold start:</span>   <span class="v">~20 sec</span>
+    <span class="k">Lifecycle:</span>    <span class="v">55 min, exit 0</span>
+    <span class="k">Cues:</span>         <span class="v">5 live via Nabu Casa</span>
+    <span class="k">Cost:</span>         <span class="v cost">~AUD $0.02</span>
   </div>
-  <pre style="font-size: 0.45em;"><code>02:36:29 delivered via HA: '30min mark: 3.0km, HR 97. Fuel + hydrate.'
-02:45:08 delivered via HA: 'Cadence 158spm — lift the feet, target 165+'
-02:48:42 delivered via HA: 'Pace 4:56/km — dial back to 7:15+'         # false positive, fixed same-day
-02:53:48 delivered via HA: '5km done. HR 141, keep it honest.'
-02:59:24 delivered via HA: 'HR 165 for 1min+ — ease 30 seconds'
-03:01:25 session inactive — exiting</code></pre>
+  <pre style="font-size: 0.4em; margin-top: 0.5em;"><code>02:36 '30min mark: 3.0km, HR 97. Fuel + hydrate.'
+02:45 'Cadence 158spm — lift the feet, target 165+'
+02:53 '5km done. HR 141, keep it honest.'
+02:59 'HR 165 for 1min+ — ease 30 seconds'
+03:01 session inactive — exiting</code></pre>
 </section>
 
 <!-- 10: Non-obvious lessons -->
 <section>
-  <h2>Non-obvious lessons</h2>
-  <ul>
-    <li><strong>Task-per-session works.</strong> Fargate cold-start is fast enough that you don't need an always-on service to feel real-time. A ~20s spawn is invisible against a 45min run.</li>
-    <li class="fragment"><strong>SSM Parameter Store &gt; env vars for secrets.</strong> Injected at container start via task-def <code>secrets:</code> binding. Token never sits in the image or task definition JSON.</li>
-    <li class="fragment"><strong>CloudWatch is enough observability</strong> for this shape of workload. Every task = one log stream = the whole story of the run.</li>
-    <li class="fragment"><strong>The hard problem wasn't AWS.</strong> It was routing TTS past Spotify to Android's music stream on Bluetooth. Once that was solved, the cloud port was an afternoon.</li>
+  <h2>Lessons</h2>
+  <ul style="max-width: 720px; margin: 0 auto;">
+    <li><strong>Task-per-session works.</strong> Fargate cold-start is invisible against a 45min run.</li>
+    <li class="fragment"><strong>SSM &gt; env vars for secrets.</strong> Injected at container start — token never in the image.</li>
+    <li class="fragment"><strong>CloudWatch is enough observability</strong> for this shape. One task = one log stream = whole run.</li>
+    <li class="fragment"><strong>AWS was easy.</strong> Hard problem was routing TTS past Spotify to Android's music stream.</li>
   </ul>
 </section>
 
@@ -192,7 +182,7 @@ ecs.run_task(
     <code>nickt.com.au/running</code> — coach dashboard<br>
     <code>nickt.com.au/talk.html</code> — this deck
   </p>
-  <p class="fragment" style="margin-top: 2em;">Questions?</p>
+  <p class="fragment" style="margin-top: 1.5em;">Questions?</p>
 </section>
 
 </div>
@@ -200,7 +190,7 @@ ecs.run_task(
 
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
-<link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
 <script>
   Reveal.initialize({
     hash: true,
@@ -208,6 +198,11 @@ ecs.run_task(
     progress: true,
     slideNumber: 'c/t',
     transition: 'fade',
+    width: 1100,
+    height: 720,
+    margin: 0.06,
+    minScale: 0.15,
+    maxScale: 2.0,
     plugins: [ RevealHighlight ],
   });
 </script>
