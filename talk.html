@@ -80,7 +80,7 @@
 <!-- 3: What it does -->
 <section>
   <h2>What it does</h2>
-  <ol style="max-width: 620px; margin: 0 auto; text-align: left;">
+  <ol style="max-width: 1200px; margin: 0 auto; text-align: left;">
     <li>Watch pings Garmin → LiveTrack URL emailed</li>
     <li>System spots the email, spins up a coaching session</li>
     <li>Polls LiveTrack every 30s for fresh trackpoints</li>
@@ -110,7 +110,7 @@
 <!-- 5: What AWS is doing -->
 <section>
   <h2>What AWS is doing</h2>
-  <div class="kv" style="margin: 0.5em auto; max-width: 720px;">
+  <div class="kv" style="margin: 0.5em auto; max-width: 1200px;">
     <span class="k aws">Fargate</span>       <span class="v">Runs the container per session</span>
     <span class="k aws">ECR</span>           <span class="v">Hosts the image (139MB)</span>
     <span class="k aws">SSM Params</span>    <span class="v">HA token as SecureString</span>
@@ -122,7 +122,7 @@
 <!-- 6: The pattern -->
 <section>
   <h2 class="big win">Task-per-session</h2>
-  <ul style="max-width: 600px; margin: 0 auto;">
+  <ul style="max-width: 1100px; margin: 0 auto;">
     <li>Container spawns when a LiveTrack email arrives</li>
     <li>Runs for the duration of the run</li>
     <li>Exits when Garmin closes the session</li>
@@ -217,7 +217,7 @@ ecs.run_task(
 <!-- 11: Non-obvious lessons -->
 <section>
   <h2>Lessons</h2>
-  <ul style="max-width: 720px; margin: 0 auto;">
+  <ul style="max-width: 1400px; margin: 0 auto;">
     <li><strong class="win">Task-per-session works.</strong> Fargate cold-start is invisible against a 45min run.</li>
     <li class="fragment"><strong class="aws">SSM &gt; env vars for secrets.</strong> Injected at container start — token never in the image.</li>
     <li class="fragment"><strong class="aws">CloudWatch is enough observability</strong> for this shape. One task = one log stream = whole run.</li>
