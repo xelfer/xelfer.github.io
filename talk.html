@@ -18,7 +18,8 @@
   .reveal h2 { font-size: 1.7em; text-transform: none; letter-spacing: -0.01em; margin-bottom: 0.6em; color: var(--gold); }
   .reveal h3 { text-transform: none; }
   .reveal p { margin: 0.4em 0; }
-  .reveal pre { box-shadow: none; font-size: 0.5em; }
+  .reveal pre { box-shadow: none; font-size: 0.42em; overflow: hidden; }
+  .reveal pre code { white-space: pre; overflow: hidden; }
   .reveal code { font-family: 'JetBrains Mono', ui-monospace, monospace; }
   .reveal .subtitle { color: var(--dim); font-weight: 400; margin-top: -0.5em; }
   .reveal .caption { color: #888; font-size: 0.6em; margin-top: 0.6em; }
@@ -134,22 +135,20 @@
 <section>
   <h2>~50 lines of CDK Python</h2>
   <pre><code class="language-python">class LiveCoachStack(Stack):
-  def __init__(self, scope, id, **kwargs):
-    super().__init__(scope, id, **kwargs)
-
+  def __init__(self, scope, id, **kw):
+    super().__init__(scope, id, **kw)
     repo = ecr.Repository(self, "Repo", repository_name="live-coach")
     vpc = ec2.Vpc.from_lookup(self, "Vpc", is_default=True)
-    cluster = ecs.Cluster(self, "Cluster", vpc=vpc)
+    ecs.Cluster(self, "Cluster", cluster_name="live-coach", vpc=vpc)
     logs_grp = logs.LogGroup(self, "Logs")
-    ha_token = ssm.StringParameter.from_secure_string_parameter_attributes(
-      self, "HaToken", parameter_name="/live-coach/ha-token")
+    token = ssm.StringParameter.from_secure_string_parameter_attributes(
+      self, "Token", parameter_name="/live-coach/ha-token")
 
     task = ecs.FargateTaskDefinition(self, "Task", cpu=256, memory_limit_mib=512)
     task.add_container("orchestrator",
       image=ecs.ContainerImage.from_ecr_repository(repo, "latest"),
       logging=ecs.LogDrivers.aws_logs(log_group=logs_grp),
-      secrets={"HA_TOKEN": ecs.Secret.from_ssm_parameter(ha_token)})
-  </code></pre>
+      secrets={"HA_TOKEN": ecs.Secret.from_ssm_parameter(token)})</code></pre>
 </section>
 
 <!-- 8: How a session fires -->
