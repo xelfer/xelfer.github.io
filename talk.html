@@ -26,8 +26,20 @@
   .reveal .kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.35em 0.9em; text-align: left; font-size: 0.75em; }
   .reveal .kv .k { color: var(--dim); }
   .reveal .kv .v { font-family: ui-monospace, monospace; }
-  .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.95em; line-height: 1.45; text-align: left; white-space: pre; color: #ddd; display: inline-block; margin: 0 auto; }
-  .reveal .diagram-wrap { text-align: center; }
+  .reveal .arch { text-align: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.95em; line-height: 1.6; }
+  .reveal .arch .step { display: inline-block; padding: 0.5em 1em; border-radius: 10px; margin: 0.15em auto; }
+  .reveal .arch .step-plain { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ddd; }
+  .reveal .arch .step-aws { background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.5); color: #ffb84d; font-weight: 600; }
+  .reveal .arch .step-strava { background: rgba(252,76,2,0.15); border: 1px solid rgba(252,76,2,0.5); color: #ff7a3e; font-weight: 600; }
+  .reveal .arch .arrow { color: var(--gold); font-size: 1.6em; line-height: 1; margin: 0.1em 0; }
+  .reveal .pill { display: inline-block; padding: 0.15em 0.55em; border-radius: 999px; font-weight: 700; font-size: 0.85em; }
+  .reveal .pill-strava { background: var(--strava); color: white; }
+  .reveal .pill-win { background: var(--win); color: #0e0e0e; }
+  .reveal .pill-aws { background: var(--aws); color: #0e0e0e; }
+  .reveal .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8em; margin: 1em 0; }
+  .reveal .stat { background: rgba(255,255,255,0.04); border-left: 4px solid var(--strava); padding: 0.5em 0.8em; text-align: left; border-radius: 4px; }
+  .reveal .stat .label { color: var(--dim); font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.06em; }
+  .reveal .stat .value { color: white; font-size: 1.3em; font-weight: 700; font-family: ui-monospace, monospace; }
   .reveal .diagram .aws { color: var(--aws); font-weight: 700; }
   .reveal .win  { color: var(--win); font-weight: 700; }
   .reveal .cost { color: var(--gold); font-weight: 700; }
@@ -57,15 +69,12 @@
   <p class="caption">Nick Triantafillou · AWS Wollongong Meetup · Aug 6 2026</p>
 </section>
 
-<!-- 2: The problem — with selfie background -->
-<section class="hero">
-  <div class="hero-bg" style="background-image: url('assets/talk/selfie-coast.jpg');"></div>
-  <div class="hero-content">
-    <h2>The problem</h2>
-    <p>Training for the <span class="strava">Sydney Marathon</span>.</p>
-    <p>I want a coach in my ear during runs — real-time cues on pace, HR, cadence, milestones, <em>"push through it."</em></p>
-    <p class="fragment quiet" style="margin-top: 1em;">On <em>my</em> plan, with <em>my</em> HR ceiling, with rules I wrote.</p>
-  </div>
+<!-- 2: The problem -->
+<section>
+  <h2>The problem</h2>
+  <p>Training for the <span class="pill pill-strava">Sydney Marathon</span> (Aug 30).</p>
+  <p style="margin-top: 1em;">I want a coach in my ear during runs — real-time cues on <span class="strava">pace</span>, <span class="strava">HR</span>, <span class="strava">cadence</span>, milestones, <em>"push through it."</em></p>
+  <p class="fragment quiet" style="margin-top: 1.5em;">On <em>my</em> plan, with <em>my</em> HR ceiling, with rules I wrote.</p>
 </section>
 
 <!-- 3: What it does -->
@@ -80,23 +89,22 @@
   </ol>
 </section>
 
-<!-- 4: Architecture (AWS highlighted) -->
+<!-- 4: Architecture (progressive reveal) -->
 <section>
   <h2>Architecture</h2>
-  <div class="diagram-wrap">
-    <div class="diagram">Garmin watch → LiveTrack email
-        ↓
-Gmail poller (small daemon on NAS)
-        ↓
-<span class="aws">boto3 → ecs.run_task()</span>
-        ↓
-<span class="aws">Fargate container</span>: polls + runs rules
-        ↓
-HTTPS POST → Home Assistant (Nabu Casa)
-        ↓
-Phone TTS → BT headphones</div>
+  <div class="arch">
+    <div class="fragment fade-up"><span class="step step-plain">Garmin watch → LiveTrack email</span></div>
+    <div class="fragment fade-up arrow">↓</div>
+    <div class="fragment fade-up"><span class="step step-plain">Gmail poller (NAS daemon)</span></div>
+    <div class="fragment fade-up arrow">↓</div>
+    <div class="fragment fade-up"><span class="step step-aws">boto3 → ecs.run_task()</span></div>
+    <div class="fragment fade-up arrow">↓</div>
+    <div class="fragment fade-up"><span class="step step-aws">Fargate container — polls + runs rules</span></div>
+    <div class="fragment fade-up arrow">↓</div>
+    <div class="fragment fade-up"><span class="step step-plain">HTTPS POST → Home Assistant (Nabu Casa)</span></div>
+    <div class="fragment fade-up arrow">↓</div>
+    <div class="fragment fade-up"><span class="step step-strava">Phone TTS → BT headphones</span></div>
   </div>
-  <p class="caption" style="margin-top: 1em;">AWS holds the coaching compute. Everything else is glue.</p>
 </section>
 
 <!-- 5: What AWS is doing -->
@@ -168,15 +176,14 @@ ecs.run_task(
 <!-- 9: Today's actual run -->
 <section>
   <h2>Today's lunch run</h2>
-  <div class="kv" style="margin: 0.3em auto; max-width: 680px;">
-    <span class="k">Run:</span>          <span class="v">6.01 km, 43:38, 7:15/km</span>
-    <span class="k">Task fired:</span>   <span class="v">12:06:07</span>
-    <span class="k">Cold start:</span>   <span class="v">~20 sec</span>
-    <span class="k">Lifecycle:</span>    <span class="v">55 min, exit 0</span>
-    <span class="k">Cues:</span>         <span class="v">5 live via Nabu Casa</span>
-    <span class="k">Cost:</span>         <span class="v cost">~AUD $0.02</span>
+  <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); max-width: 900px; margin: 0.5em auto;">
+    <div class="stat" style="border-left-color: var(--strava);"><div class="label">Distance</div><div class="value">6.01 km</div></div>
+    <div class="stat" style="border-left-color: var(--strava);"><div class="label">Pace</div><div class="value">7:15/km</div></div>
+    <div class="stat" style="border-left-color: var(--aws);"><div class="label">Cold start</div><div class="value">~20 s</div></div>
+    <div class="stat" style="border-left-color: var(--win);"><div class="label">Cost</div><div class="value">$0.02</div></div>
   </div>
-  <pre style="font-size: 0.4em; margin-top: 0.5em;"><code>02:36 '30min mark: 3.0km, HR 97. Fuel + hydrate.'
+  <p style="margin: 0.6em 0;"><span class="pill pill-aws">FARGATE</span> ran <strong>55 min</strong>, exit 0. <span class="pill pill-win">5 cues</span> delivered live.</p>
+  <pre style="font-size: 0.42em; margin-top: 0.8em; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto;"><code>02:36 '30min mark: 3.0km, HR 97. Fuel + hydrate.'
 02:45 'Cadence 158spm — lift the feet, target 165+'
 02:53 '5km done. HR 141, keep it honest.'
 02:59 'HR 165 for 1min+ — ease 30 seconds'
@@ -186,19 +193,23 @@ ecs.run_task(
 <!-- 10: Real training context — Strava screenshot -->
 <section>
   <h2>Why bother</h2>
-  <div class="two-col">
-    <div>
-      <div class="strava-card">
-        <p style="margin: 0 0 0.3em 0;"><span class="strava">STRAVA</span> · Fri Jul 31</p>
-        <p style="margin: 0.2em 0;"><strong>22.50 km · 2:52:21 · 7:40/km</strong></p>
-        <p style="margin: 0.4em 0 0.1em 0; font-size: 0.85em;">PR: Bellambi → Towradgi</p>
-        <p style="margin: 0.1em 0; font-size: 0.85em;">PR: Murray Rd Climb</p>
-        <p style="margin: 0.1em 0; font-size: 0.85em;">Local Legend: Salvaging Andrew</p>
-      </div>
-      <p class="caption" style="margin-top: 1.2em;">Longer runs = more cues, more value.<br>Peak run <span class="win">next weekend: 28 km.</span></p>
+  <div class="two-col" style="grid-template-columns: 1fr 1.2fr; gap: 2em;">
+    <div style="text-align: center;">
+      <img class="inline" src="assets/talk/strava-22k.jpg" style="max-height: 620px; max-width: 100%;" alt="Strava 22.5km run — Wollongong coast">
     </div>
     <div>
-      <img class="inline" src="assets/talk/strava-22k.jpg" style="max-height: 560px; width: 100%; object-fit: contain;" alt="Strava 22.5km run map along Wollongong coast">
+      <p style="font-size: 1.4em; margin: 0;"><span class="pill pill-strava">STRAVA</span> <span class="quiet" style="font-size: 0.7em;">Fri Jul 31</span></p>
+      <p style="font-size: 2em; font-weight: 800; margin: 0.4em 0; color: white; font-family: ui-monospace, monospace;">22.5 km</p>
+      <div class="stat-grid">
+        <div class="stat"><div class="label">Time</div><div class="value">2:52:21</div></div>
+        <div class="stat"><div class="label">Pace</div><div class="value">7:40/km</div></div>
+        <div class="stat"><div class="label">Elev.</div><div class="value">206 m</div></div>
+        <div class="stat"><div class="label">Avg HR</div><div class="value">155 bpm</div></div>
+      </div>
+      <p style="margin: 1em 0 0.3em 0;"><span class="pill pill-win">PR</span> Bellambi → Towradgi</p>
+      <p style="margin: 0.3em 0;"><span class="pill pill-win">PR</span> Murray Rd Climb</p>
+      <p style="margin: 0.3em 0;"><span class="pill pill-win">👑</span> Local Legend · Salvaging Andrew</p>
+      <p style="margin-top: 1.4em; font-size: 1.1em;">Peak run <span class="pill pill-win">next weekend</span> <span style="font-weight: 800; color: var(--win);">28 km</span></p>
     </div>
   </div>
 </section>
