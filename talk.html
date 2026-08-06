@@ -182,11 +182,12 @@ ecs.run_task(
     <div class="stat" style="border-left-color: var(--win);"><div class="label">Cost</div><div class="value">$0.02</div></div>
   </div>
   <p style="margin: 0.6em 0;"><span class="pill pill-aws">FARGATE</span> ran <strong>55 min</strong>, exit 0. <span class="pill pill-win">5 cues</span> delivered live.</p>
-  <pre style="font-size: 0.42em; margin-top: 0.8em; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto;"><code>02:36 '30min mark: 3.0km, HR 97. Fuel + hydrate.'
-02:45 'Cadence 158spm — lift the feet, target 165+'
-02:53 '5km done. HR 141, keep it honest.'
-02:59 'HR 165 for 1min+ — ease 30 seconds'
-03:01 session inactive — exiting</code></pre>
+  <pre style="font-size: 0.42em; margin-top: 0.8em; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto;"><code>12:36 AEST  '30min mark: 3.0km, HR 97. Fuel + hydrate.'
+12:45 AEST  'Cadence 158spm — lift the feet, target 165+'
+12:48 AEST  'Pace 4:56/km — dial back to 7:15+'   ← false positive, shipped a fix same run
+12:53 AEST  '5km done. HR 141, keep it honest.'
+12:59 AEST  'HR 165 for 1min+ — ease 30 seconds'
+13:01 AEST  session inactive — exiting</code></pre>
 </section>
 
 <!-- 10: Real training context — Strava screenshot -->
