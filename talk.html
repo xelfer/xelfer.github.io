@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Live coach on Fargate</title>
+<title>Live running coach on AWS</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
 <style>
@@ -18,8 +18,10 @@
   .reveal .kv .k { color: #999; }
   .reveal .kv .v { font-family: ui-monospace, monospace; }
   .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.6em; line-height: 1.4; text-align: left; white-space: pre; color: #ddd; }
+  .reveal .diagram .aws { color: #f9c74f; font-weight: 700; }
   .reveal .win  { color: #90be6d; font-weight: 700; }
   .reveal .cost { color: #f9c74f; font-weight: 700; }
+  .reveal .aws  { color: #f9c74f; font-weight: 700; }
   .reveal .quiet { color: #888; }
   .reveal ul li { margin: 0.35em 0; }
   .reveal blockquote { border-left: 3px solid #f9c74f; padding: 0.4em 0.8em; font-style: italic; font-size: 0.9em; }
@@ -31,8 +33,8 @@
 
 <!-- 1: Title -->
 <section>
-  <h1>Live coach on Fargate</h1>
-  <p class="subtitle">or: how I made AWS run my lunch break</p>
+  <h1>Live running coach</h1>
+  <p class="subtitle">built on AWS — coached my lunch run today</p>
   <p class="caption">Nick Triantafillou · AWS Meetup · Aug 6 2026</p>
 </section>
 
@@ -40,49 +42,73 @@
 <section>
   <h2>The problem</h2>
   <p>I'm training for the Sydney Marathon.</p>
-  <p>I want a coach in my ear during runs — real-time cues: pace, HR, cadence, milestones, "push".</p>
-  <p class="fragment quiet" style="margin-top: 1.5em;">Nike Run Club has voice coaching. Runna does. Garmin sort of does.<br>None of them coach <em>my</em> plan, using <em>my</em> HR ceiling, in <em>my</em> voice.</p>
+  <p>I want a coach in my ear during runs — real-time cues on pace, HR, cadence, milestones, "push through it."</p>
+  <p class="fragment quiet" style="margin-top: 1.5em;">Nike Run Club, Runna, Garmin all do a version of voice coaching.<br>None coach <em>my</em> plan, using <em>my</em> HR ceiling, in <em>my</em> voice.</p>
 </section>
 
-<!-- 3: What already existed -->
+<!-- 3: What it does -->
 <section>
-  <h2>What already existed</h2>
+  <h2>What it does</h2>
+  <ol style="max-width: 650px; margin: 0 auto; text-align: left;">
+    <li>Watch pings Garmin → LiveTrack URL emailed to me</li>
+    <li>System spots the email, spins up a coaching session</li>
+    <li>Polls LiveTrack every 30s for fresh trackpoints</li>
+    <li>Rules engine decides when to say something</li>
+    <li>TTS to my phone → Bluetooth headphones, mid-run</li>
+  </ol>
+  <p class="caption fragment" style="margin-top: 1.5em;">
+    Today it fired 5 real cues during my 6km lunch run — pace, HR ceiling, cadence, milestone, time check.
+  </p>
+</section>
+
+<!-- 4: Architecture (AWS highlighted) -->
+<section>
+  <h2>Architecture</h2>
   <div class="diagram">
-Garmin watch → LiveTrack URL (Gmail)
+Garmin watch → LiveTrack email (Gmail)
         ↓
-NAS (Python rules engine)
+Gmail poller (small daemon on my NAS)
         ↓
-HA Companion push → phone TTS → Shokz headphones
+<span class="aws">boto3 → ecs.run_task()  ← Fargate task spawns per session</span>
+        ↓
+<span class="aws">Fargate container</span>: polls LiveTrack, runs rules engine
+        ↓
+HTTPS POST → Home Assistant (via Nabu Casa public URL)
+        ↓
+Phone TTS → Shokz OpenRun Pro (bone-conduction BT)
   </div>
-  <p class="caption">Home-lab pipeline. Works. Runs on my NAS in Wollongong.</p>
+  <p class="caption fragment">AWS holds the coaching compute. Everything else is glue.</p>
 </section>
 
-<!-- 4: The question -->
+<!-- 5: What AWS is doing -->
 <section>
-  <h2 class="big">Can it live on AWS instead?</h2>
-  <p class="fragment quiet">Same code. Zero rewrite. One env-var flip.</p>
-</section>
-
-<!-- 5: The architecture -->
-<section>
-  <h2>The port</h2>
-  <div class="diagram">
-Garmin → LiveTrack email
-      ↓
-NAS launcher (Gmail poll)
-      ↓
-    <span class="win">ecs.run_task()</span>   ← this is the whole change
-      ↓
-Fargate task (same Python container)
-      ↓  polls LiveTrack every 30s
-Cues → HTTPS POST → Home Assistant (via Nabu Casa)
-      ↓
-Phone TTS → Shokz headphones
+  <h2>What AWS is doing</h2>
+  <div class="kv" style="font-size: 0.85em; margin: 1em auto; max-width: 720px;">
+    <span class="k aws">Fargate</span>       <span class="v">Runs the coaching container. 0.25 vCPU / 512MB. On-demand per session.</span>
+    <span class="k aws">ECR</span>           <span class="v">Hosts the container image (<code>live-coach:latest</code>, 139MB).</span>
+    <span class="k aws">SSM Parameter Store</span> <span class="v">Injects the HA API token as a SecureString — never touches the image.</span>
+    <span class="k aws">CloudWatch Logs</span> <span class="v">Every cue, every trackpoint poll, every session end.</span>
+    <span class="k aws">IAM</span>           <span class="v">Task role + execution role, minimal-privilege.</span>
+    <span class="k aws">Default VPC</span>   <span class="v">Public subnets, task assigned public IP for outbound calls.</span>
   </div>
-  <p class="caption fragment">The container is identical to what runs on my NAS. Dockerfile is 10 lines.</p>
 </section>
 
-<!-- 6: The IaC -->
+<!-- 6: The pattern -->
+<section>
+  <h2 class="big win">Task-per-session</h2>
+  <ul>
+    <li>Fargate container spawns when a LiveTrack email arrives</li>
+    <li>Runs for exactly the duration of the run</li>
+    <li>Exits when Garmin closes the session</li>
+    <li class="fragment cost">Zero idle infrastructure. My "backend" doesn't exist most of the day.</li>
+  </ul>
+  <blockquote class="fragment" style="margin-top: 1.5em;">
+    Task-per-session &gt; always-on for user-triggered, ephemeral workloads.<br>
+    Fargate's cold-start is fast enough that you can start a service <em>when the user acts</em>.
+  </blockquote>
+</section>
+
+<!-- 7: The IaC -->
 <section>
   <h2>~50 lines of CDK Python</h2>
   <pre><code class="language-python">class LiveCoachStack(Stack):
@@ -107,32 +133,26 @@ Phone TTS → Shokz headphones
   <p class="caption">ECR + Fargate cluster + task def + IAM + logs + secret injection.</p>
 </section>
 
-<!-- 7: The toggle -->
+<!-- 8: How a session fires -->
 <section>
-  <h2>The toggle</h2>
-  <pre><code class="language-python">BACKEND = os.environ.get("LIVECOACH_BACKEND", "local")
+  <h2>Firing a session</h2>
+  <pre><code class="language-python">import boto3
 
-if BACKEND == "aws":
-    ecs.run_task(cluster="live-coach", taskDefinition="live-coach",
-                 launchType="FARGATE", overrides={...})
-else:
-    subprocess.Popen([python, orchestrator, "--url", livetrack_url])
+ecs = boto3.client("ecs", region_name="ap-southeast-2")
+ecs.run_task(
+    cluster="live-coach",
+    taskDefinition="live-coach",
+    launchType="FARGATE",
+    networkConfiguration={"awsvpcConfiguration": {
+        "subnets": [...], "assignPublicIp": "ENABLED"}},
+    overrides={"containerOverrides": [{
+        "name": "orchestrator",
+        "command": ["--url", livetrack_url, "--target-km", "6"],
+        "environment": [{"name": "HA_URL", "value": nabu_casa_url}],
+    }]},
+)
   </code></pre>
-  <p class="caption fragment">One env var. Local NAS for testing, Fargate for the real thing.</p>
-</section>
-
-<!-- 8: The killer pattern -->
-<section>
-  <h2 class="big win">Task-per-session</h2>
-  <ul>
-    <li>Fargate container spawns when a LiveTrack email arrives</li>
-    <li>Runs for exactly the duration of the run</li>
-    <li>Exits when Garmin closes the session</li>
-    <li class="fragment cost">Zero idle infrastructure.</li>
-  </ul>
-  <blockquote class="fragment" style="margin-top: 1.5em;">
-    My backend didn't exist 20 seconds before it started coaching me.
-  </blockquote>
+  <p class="caption">One function call. Container is running ~15s later. That's the whole handoff.</p>
 </section>
 
 <!-- 9: Today's actual run -->
@@ -154,39 +174,23 @@ else:
 03:01:25 session inactive — exiting</code></pre>
 </section>
 
-<!-- 10: What the port cost -->
-<section>
-  <h2>What the port cost</h2>
-  <div class="kv" style="font-size: 0.85em; margin: 1em auto; max-width: 620px;">
-    <span class="k">Dockerfile:</span>              <span class="v">10 lines</span>
-    <span class="k">CDK stack (Python):</span>      <span class="v">~50 lines</span>
-    <span class="k">Launcher toggle:</span>         <span class="v">30 lines (subprocess vs boto3)</span>
-    <span class="k">Time:</span>                    <span class="v">~1 afternoon</span>
-    <span class="k">Container code changed:</span>  <span class="v win">zero</span>
-  </div>
-  <p class="caption fragment" style="margin-top: 1.5em;">
-    Half of the afternoon was installing Node 20 to get CDK v2 running.<br>
-    The AWS part was the fast part.
-  </p>
-</section>
-
-<!-- 11: What I learned -->
+<!-- 10: Non-obvious lessons -->
 <section>
   <h2>Non-obvious lessons</h2>
   <ul>
-    <li><strong>Task-per-session &gt; always-on</strong> for user-triggered ephemeral workloads. Runna's backend runs 24/7 to serve users. Mine literally doesn't exist most of the day.</li>
-    <li class="fragment"><strong>Compute portability was free.</strong> Same Python, same requests library, same coaching rules. Container abstraction actually delivered.</li>
-    <li class="fragment"><strong>Delivery was the hard problem.</strong> The interesting engineering was routing TTS past Spotify to Android's music stream on Bluetooth. AWS was easy in comparison.</li>
-    <li class="fragment"><strong>Nabu Casa saved me a day.</strong> Public HA URL with token auth. Would have needed to expose HA via Pangolin/Traefik otherwise.</li>
+    <li><strong>Task-per-session works.</strong> Fargate cold-start is fast enough that you don't need an always-on service to feel real-time. A ~20s spawn is invisible against a 45min run.</li>
+    <li class="fragment"><strong>SSM Parameter Store &gt; env vars for secrets.</strong> Injected at container start via task-def <code>secrets:</code> binding. Token never sits in the image or task definition JSON.</li>
+    <li class="fragment"><strong>CloudWatch is enough observability</strong> for this shape of workload. Every task = one log stream = the whole story of the run.</li>
+    <li class="fragment"><strong>The hard problem wasn't AWS.</strong> It was routing TTS past Spotify to Android's music stream on Bluetooth. Once that was solved, the cloud port was an afternoon.</li>
   </ul>
 </section>
 
-<!-- 12: Fin -->
+<!-- 11: Fin -->
 <section>
   <h2 class="big">Fin.</h2>
   <p class="quiet" style="margin-top: 1em;">
-    <code>github.com/nickt/live-coach</code> (or wherever it lands)<br>
-    <code>nickt.com.au/running</code> — coach dashboard
+    <code>nickt.com.au/running</code> — coach dashboard<br>
+    <code>nickt.com.au/talk.html</code> — this deck
   </p>
   <p class="fragment" style="margin-top: 2em;">Questions?</p>
 </section>
