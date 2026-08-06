@@ -26,7 +26,8 @@
   .reveal .kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.35em 0.9em; text-align: left; font-size: 0.75em; }
   .reveal .kv .k { color: var(--dim); }
   .reveal .kv .v { font-family: ui-monospace, monospace; }
-  .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.55em; line-height: 1.4; text-align: left; white-space: pre; color: #ddd; }
+  .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.95em; line-height: 1.45; text-align: left; white-space: pre; color: #ddd; display: inline-block; margin: 0 auto; }
+  .reveal .diagram-wrap { text-align: center; }
   .reveal .diagram .aws { color: var(--aws); font-weight: 700; }
   .reveal .win  { color: var(--win); font-weight: 700; }
   .reveal .cost { color: var(--gold); font-weight: 700; }
@@ -41,7 +42,7 @@
   .reveal section.hero { padding: 1em; }
   .reveal .hero-content { position: relative; z-index: 1; }
   .reveal img.inline { border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-  .reveal .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; align-items: center; }
+  .reveal .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; align-items: start; }
   .reveal .strava-card { background: rgba(252,76,2,0.08); border: 1px solid rgba(252,76,2,0.35); border-radius: 12px; padding: 0.6em 0.9em; }
 </style>
 </head>
@@ -82,8 +83,8 @@
 <!-- 4: Architecture (AWS highlighted) -->
 <section>
   <h2>Architecture</h2>
-  <div class="diagram">
-Garmin watch → LiveTrack email
+  <div class="diagram-wrap">
+    <div class="diagram">Garmin watch → LiveTrack email
         ↓
 Gmail poller (small daemon on NAS)
         ↓
@@ -93,9 +94,9 @@ Gmail poller (small daemon on NAS)
         ↓
 HTTPS POST → Home Assistant (Nabu Casa)
         ↓
-Phone TTS → BT headphones
+Phone TTS → BT headphones</div>
   </div>
-  <p class="caption">AWS holds the coaching compute. Everything else is glue.</p>
+  <p class="caption" style="margin-top: 1em;">AWS holds the coaching compute. Everything else is glue.</p>
 </section>
 
 <!-- 5: What AWS is doing -->
@@ -187,11 +188,17 @@ ecs.run_task(
   <h2>Why bother</h2>
   <div class="two-col">
     <div>
-      <p class="strava-card"><span class="strava">STRAVA</span> · Fri Jul 31<br><strong>22.50 km · 2:52:21 · 7:40/km</strong><br>PR: Bellambi → Towradgi<br>PR: Murray Rd Climb<br>Local Legend: Salvaging Andrew</p>
-      <p class="caption" style="margin-top: 1em;">Coach fires for real runs like this. Longer runs = more cues, more value. Peak run 3 weeks away: <span class="win">28 km.</span></p>
+      <div class="strava-card">
+        <p style="margin: 0 0 0.3em 0;"><span class="strava">STRAVA</span> · Fri Jul 31</p>
+        <p style="margin: 0.2em 0;"><strong>22.50 km · 2:52:21 · 7:40/km</strong></p>
+        <p style="margin: 0.4em 0 0.1em 0; font-size: 0.85em;">PR: Bellambi → Towradgi</p>
+        <p style="margin: 0.1em 0; font-size: 0.85em;">PR: Murray Rd Climb</p>
+        <p style="margin: 0.1em 0; font-size: 0.85em;">Local Legend: Salvaging Andrew</p>
+      </div>
+      <p class="caption" style="margin-top: 1.2em;">Longer runs = more cues, more value.<br>Peak run <span class="win">next weekend: 28 km.</span></p>
     </div>
     <div>
-      <img class="inline" src="assets/talk/strava-22k.jpg" style="max-height: 520px;" alt="Strava 22.5km run map along Wollongong coast">
+      <img class="inline" src="assets/talk/strava-22k.jpg" style="max-height: 560px; width: 100%; object-fit: contain;" alt="Strava 22.5km run map along Wollongong coast">
     </div>
   </div>
 </section>
