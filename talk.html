@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Live coach on Fargate</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+<style>
+  .reveal h1, .reveal h2, .reveal h3 { text-transform: none; letter-spacing: -0.01em; }
+  .reveal pre { box-shadow: none; font-size: 0.55em; }
+  .reveal code { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .reveal .fragment.highlight-current { transition: color 0.2s ease; }
+  .reveal .highlight-current.current-fragment { color: #f9c74f; }
+  .reveal .subtitle { color: #999; font-weight: 400; margin-top: -0.5em; }
+  .reveal .caption { color: #888; font-size: 0.65em; margin-top: 0.4em; }
+  .reveal .big { font-size: 1.6em; font-weight: 700; }
+  .reveal .kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.4em 1em; text-align: left; }
+  .reveal .kv .k { color: #999; }
+  .reveal .kv .v { font-family: ui-monospace, monospace; }
+  .reveal .diagram { font-family: ui-monospace, monospace; font-size: 0.6em; line-height: 1.4; text-align: left; white-space: pre; color: #ddd; }
+  .reveal .win  { color: #90be6d; font-weight: 700; }
+  .reveal .cost { color: #f9c74f; font-weight: 700; }
+  .reveal .quiet { color: #888; }
+  .reveal ul li { margin: 0.35em 0; }
+  .reveal blockquote { border-left: 3px solid #f9c74f; padding: 0.4em 0.8em; font-style: italic; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- 1: Title -->
+<section>
+  <h1>Live coach on Fargate</h1>
+  <p class="subtitle">or: how I made AWS run my lunch break</p>
+  <p class="caption">Nick Triantafillou · AWS Meetup · Aug 6 2026</p>
+</section>
+
+<!-- 2: The problem -->
+<section>
+  <h2>The problem</h2>
+  <p>I'm training for the Sydney Marathon.</p>
+  <p>I want a coach in my ear during runs — real-time cues: pace, HR, cadence, milestones, "push".</p>
+  <p class="fragment quiet" style="margin-top: 1.5em;">Nike Run Club has voice coaching. Runna does. Garmin sort of does.<br>None of them coach <em>my</em> plan, using <em>my</em> HR ceiling, in <em>my</em> voice.</p>
+</section>
+
+<!-- 3: What already existed -->
+<section>
+  <h2>What already existed</h2>
+  <div class="diagram">
+Garmin watch → LiveTrack URL (Gmail)
+        ↓
+NAS (Python rules engine)
+        ↓
+HA Companion push → phone TTS → Shokz headphones
+  </div>
+  <p class="caption">Home-lab pipeline. Works. Runs on my NAS in Wollongong.</p>
+</section>
+
+<!-- 4: The question -->
+<section>
+  <h2 class="big">Can it live on AWS instead?</h2>
+  <p class="fragment quiet">Same code. Zero rewrite. One env-var flip.</p>
+</section>
+
+<!-- 5: The architecture -->
+<section>
+  <h2>The port</h2>
+  <div class="diagram">
+Garmin → LiveTrack email
+      ↓
+NAS launcher (Gmail poll)
+      ↓
+    <span class="win">ecs.run_task()</span>   ← this is the whole change
+      ↓
+Fargate task (same Python container)
+      ↓  polls LiveTrack every 30s
+Cues → HTTPS POST → Home Assistant (via Nabu Casa)
+      ↓
+Phone TTS → Shokz headphones
+  </div>
+  <p class="caption fragment">The container is identical to what runs on my NAS. Dockerfile is 10 lines.</p>
+</section>
+
+<!-- 6: The IaC -->
+<section>
+  <h2>~50 lines of CDK Python</h2>
+  <pre><code class="language-python">class LiveCoachStack(Stack):
+    def __init__(self, scope, id, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        repo = ecr.Repository(self, "LiveCoachRepo", repository_name="live-coach")
+        vpc = ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True)
+        cluster = ecs.Cluster(self, "LiveCoachCluster", vpc=vpc)
+        logs_grp = logs.LogGroup(self, "Logs", retention=logs.RetentionDays.ONE_WEEK)
+        ha_token = ssm.StringParameter.from_secure_string_parameter_attributes(
+            self, "HaToken", parameter_name="/live-coach/ha-token"
+        )
+
+        task = ecs.FargateTaskDefinition(self, "Task", cpu=256, memory_limit_mib=512)
+        task.add_container("orchestrator",
+            image=ecs.ContainerImage.from_ecr_repository(repo, "latest"),
+            logging=ecs.LogDrivers.aws_logs(stream_prefix="orch", log_group=logs_grp),
+            secrets={"HA_TOKEN": ecs.Secret.from_ssm_parameter(ha_token)},
+        )
+  </code></pre>
+  <p class="caption">ECR + Fargate cluster + task def + IAM + logs + secret injection.</p>
+</section>
+
+<!-- 7: The toggle -->
+<section>
+  <h2>The toggle</h2>
+  <pre><code class="language-python">BACKEND = os.environ.get("LIVECOACH_BACKEND", "local")
+
+if BACKEND == "aws":
+    ecs.run_task(cluster="live-coach", taskDefinition="live-coach",
+                 launchType="FARGATE", overrides={...})
+else:
+    subprocess.Popen([python, orchestrator, "--url", livetrack_url])
+  </code></pre>
+  <p class="caption fragment">One env var. Local NAS for testing, Fargate for the real thing.</p>
+</section>
+
+<!-- 8: The killer pattern -->
+<section>
+  <h2 class="big win">Task-per-session</h2>
+  <ul>
+    <li>Fargate container spawns when a LiveTrack email arrives</li>
+    <li>Runs for exactly the duration of the run</li>
+    <li>Exits when Garmin closes the session</li>
+    <li class="fragment cost">Zero idle infrastructure.</li>
+  </ul>
+  <blockquote class="fragment" style="margin-top: 1.5em;">
+    My backend didn't exist 20 seconds before it started coaching me.
+  </blockquote>
+</section>
+
+<!-- 9: Today's actual run -->
+<section>
+  <h2>Today's lunch run</h2>
+  <div class="kv" style="font-size: 0.85em; margin: 1em auto; max-width: 700px;">
+    <span class="k">Run:</span>          <span class="v">6.01 km, 43:38, 7:15/km, HR 141/166</span>
+    <span class="k">Task fired at:</span> <span class="v">12:06:07 (Gmail poll → ecs.run_task)</span>
+    <span class="k">Cold start:</span>    <span class="v">~20 sec</span>
+    <span class="k">Task lifecycle:</span> <span class="v">55 min, exit code 0</span>
+    <span class="k">Cues delivered:</span> <span class="v">5 live to Shokz via Nabu Casa</span>
+    <span class="k">Cost:</span>          <span class="v cost">~AUD $0.02</span>
+  </div>
+  <pre style="font-size: 0.45em;"><code>02:36:29 delivered via HA: '30min mark: 3.0km, HR 97. Fuel + hydrate.'
+02:45:08 delivered via HA: 'Cadence 158spm — lift the feet, target 165+'
+02:48:42 delivered via HA: 'Pace 4:56/km — dial back to 7:15+'         # false positive, fixed same-day
+02:53:48 delivered via HA: '5km done. HR 141, keep it honest.'
+02:59:24 delivered via HA: 'HR 165 for 1min+ — ease 30 seconds'
+03:01:25 session inactive — exiting</code></pre>
+</section>
+
+<!-- 10: What the port cost -->
+<section>
+  <h2>What the port cost</h2>
+  <div class="kv" style="font-size: 0.85em; margin: 1em auto; max-width: 620px;">
+    <span class="k">Dockerfile:</span>              <span class="v">10 lines</span>
+    <span class="k">CDK stack (Python):</span>      <span class="v">~50 lines</span>
+    <span class="k">Launcher toggle:</span>         <span class="v">30 lines (subprocess vs boto3)</span>
+    <span class="k">Time:</span>                    <span class="v">~1 afternoon</span>
+    <span class="k">Container code changed:</span>  <span class="v win">zero</span>
+  </div>
+  <p class="caption fragment" style="margin-top: 1.5em;">
+    Half of the afternoon was installing Node 20 to get CDK v2 running.<br>
+    The AWS part was the fast part.
+  </p>
+</section>
+
+<!-- 11: What I learned -->
+<section>
+  <h2>Non-obvious lessons</h2>
+  <ul>
+    <li><strong>Task-per-session &gt; always-on</strong> for user-triggered ephemeral workloads. Runna's backend runs 24/7 to serve users. Mine literally doesn't exist most of the day.</li>
+    <li class="fragment"><strong>Compute portability was free.</strong> Same Python, same requests library, same coaching rules. Container abstraction actually delivered.</li>
+    <li class="fragment"><strong>Delivery was the hard problem.</strong> The interesting engineering was routing TTS past Spotify to Android's music stream on Bluetooth. AWS was easy in comparison.</li>
+    <li class="fragment"><strong>Nabu Casa saved me a day.</strong> Public HA URL with token auth. Would have needed to expose HA via Pangolin/Traefik otherwise.</li>
+  </ul>
+</section>
+
+<!-- 12: Fin -->
+<section>
+  <h2 class="big">Fin.</h2>
+  <p class="quiet" style="margin-top: 1em;">
+    <code>github.com/nickt/live-coach</code> (or wherever it lands)<br>
+    <code>nickt.com.au/running</code> — coach dashboard
+  </p>
+  <p class="fragment" style="margin-top: 2em;">Questions?</p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+<script>
+  Reveal.initialize({
+    hash: true,
+    controls: true,
+    progress: true,
+    slideNumber: 'c/t',
+    transition: 'fade',
+    plugins: [ RevealHighlight ],
+  });
+</script>
+</body>
+</html>
