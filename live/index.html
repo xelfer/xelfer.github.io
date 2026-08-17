@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nick Live — Sydney Marathon</title>
+<style>
+  :root {
+    --strava: #fc4c02;
+    --gold: #f9c74f;
+    --win: #90be6d;
+    --bg: #0e0e0e;
+    --card: #1a1a1a;
+    --border: rgba(255,255,255,0.1);
+    --text: #f0f0f0;
+    --dim: #888;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    padding: 1rem 1.25rem;
+    background: linear-gradient(90deg, rgba(252,76,2,0.15), rgba(249,199,79,0.08));
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    background: linear-gradient(90deg, var(--strava), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+  }
+  header .status { display: inline-block; margin-left: 0.75rem; font-size: 0.85rem; color: var(--dim); }
+  header .status.live::before { content: "● "; color: var(--strava); animation: pulse 1.5s infinite; }
+  header .status.offline::before { content: "○ "; color: var(--dim); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 900px) {
+    .container { grid-template-columns: 2fr 1fr; }
+    .tracker { grid-row: span 2; }
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .card h2 { margin: 0 0 0.75rem 0; font-size: 1.1rem; color: var(--gold); }
+
+  .tracker { padding: 0.5rem; }
+  .tracker iframe { width: 100%; height: 70vh; min-height: 500px; border: none; border-radius: 8px; }
+  .tracker .fallback {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--dim);
+  }
+  .tracker .fallback a {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--strava);
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  label { display: block; color: var(--dim); font-size: 0.85rem; margin: 0.75rem 0 0.4rem 0; }
+  input, textarea {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--gold); }
+  .charcount { color: var(--dim); font-size: 0.75rem; text-align: right; margin-top: 0.2rem; }
+  button {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--strava);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #msg-status {
+    margin-top: 0.75rem;
+    padding: 0.6rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
+    display: none;
+  }
+  #msg-status.ok { display: block; background: rgba(144,190,109,0.15); color: var(--win); border: 1px solid rgba(144,190,109,0.4); }
+  #msg-status.err { display: block; background: rgba(252,76,2,0.15); color: var(--strava); border: 1px solid rgba(252,76,2,0.4); }
+  .subtitle { color: var(--dim); font-size: 0.85rem; margin: 0.3rem 0 0.75rem 0; }
+  .footer { margin-top: 1rem; color: var(--dim); font-size: 0.75rem; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Nick Live</h1>
+  <span id="livestatus" class="status offline">Not running</span>
+</header>
+
+<div class="container">
+  <div class="card tracker">
+    <h2>Live tracking</h2>
+    <div id="tracker-content" class="fallback">
+      Checking for active session...
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Send Nick a message</h2>
+    <p class="subtitle">He'll hear it in his headphones during the run.</p>
+    <label for="sender">Your name</label>
+    <input id="sender" type="text" maxlength="40" placeholder="Kim" autocomplete="name">
+    <label for="message">Message</label>
+    <textarea id="message" maxlength="180" rows="3" placeholder="Go Dad! We're proud of you!"></textarea>
+    <div class="charcount"><span id="count">0</span> / 180</div>
+    <button id="send">Send message</button>
+    <div id="msg-status"></div>
+    <p class="footer">
+      Messages play as text-to-speech during the run.<br>
+      Keep them short and encouraging. Delivered in order.
+    </p>
+  </div>
+</div>
+
+<script>
+const API = "https://7yp3yeisvqkcqg4bis4nhkmtdu0rmwnr.lambda-url.ap-southeast-2.on.aws/";
+const $ = (id) => document.getElementById(id);
+const sender = $('sender'), message = $('message'), count = $('count'), send = $('send'), status = $('msg-status');
+const trackerContent = $('tracker-content'), livestatus = $('livestatus');
+
+sender.value = localStorage.getItem('sender') || '';
+sender.addEventListener('input', () => localStorage.setItem('sender', sender.value));
+message.addEventListener('input', () => count.textContent = message.value.length);
+
+let currentSessionUrl = null;
+
+async function pollSession() {
+  try {
+    const r = await fetch(API, {method: 'GET'});
+    const data = await r.json();
+    if (data.active && data.livetrack_url) {
+      livestatus.className = 'status live';
+      const started = Math.floor((Date.now() - data.started_ms) / 60000);
+      livestatus.textContent = `LIVE · ${started}min in · target ${data.target_km}km`;
+      if (data.livetrack_url !== currentSessionUrl) {
+        currentSessionUrl = data.livetrack_url;
+        trackerContent.className = '';
+        trackerContent.innerHTML = `<iframe src="${data.livetrack_url}" allowfullscreen></iframe>`;
+      }
+    } else {
+      livestatus.className = 'status offline';
+      livestatus.textContent = 'Not running';
+      if (currentSessionUrl !== null) {
+        currentSessionUrl = null;
+        trackerContent.className = 'fallback';
+        trackerContent.innerHTML = 'Nick isn\\'t running right now. This page will update when he starts.';
+      } else if (trackerContent.innerHTML.includes('Checking')) {
+        trackerContent.innerHTML = 'Nick isn\\'t running right now. This page will update when he starts.';
+      }
+    }
+  } catch (e) {
+    livestatus.className = 'status offline';
+    livestatus.textContent = 'Connection issue';
+  }
+}
+pollSession();
+setInterval(pollSession, 15000);
+
+send.addEventListener('click', async () => {
+  const s = sender.value.trim(), m = message.value.trim();
+  if (!s || !m) {
+    status.className = 'err';
+    status.textContent = 'Fill in your name and a message.';
+    return;
+  }
+  send.disabled = true;
+  send.textContent = 'Sending...';
+  status.style.display = 'none';
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sender: s, message: m}),
+    });
+    const data = await r.json();
+    if (r.ok) {
+      status.className = 'ok';
+      status.textContent = '✓ Sent! Nick will hear it soon.';
+      message.value = '';
+      count.textContent = '0';
+    } else {
+      status.className = 'err';
+      status.textContent = 'Error: ' + (data.error || 'unknown');
+    }
+  } catch (e) {
+    status.className = 'err';
+    status.textContent = 'Connection error. Try again.';
+  } finally {
+    send.disabled = false;
+    send.textContent = 'Send message';
+  }
+});
+</script>
+</body>
+</html>
