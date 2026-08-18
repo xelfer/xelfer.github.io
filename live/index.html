@@ -122,6 +122,24 @@
   }
   #msg-status.ok { display: block; background: rgba(144,190,109,0.15); color: var(--win); border: 1px solid rgba(144,190,109,0.4); }
   #msg-status.err { display: block; background: rgba(252,76,2,0.15); color: var(--strava); border: 1px solid rgba(252,76,2,0.4); }
+  #msg-status.warn { display: block; background: rgba(249,199,79,0.12); color: var(--gold); border: 1px solid rgba(249,199,79,0.4); }
+  #sent-list { margin-top: 1rem; display: none; }
+  #sent-list h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .sent-item {
+    display: flex; gap: 0.6rem; align-items: baseline;
+    padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;
+    background: rgba(255,255,255,0.04); border-radius: 8px;
+    border-left: 3px solid var(--dim);
+    font-size: 0.85rem;
+  }
+  .sent-item.delivered { border-left-color: var(--win); }
+  .sent-item.queued { border-left-color: var(--gold); }
+  .sent-item.gone { border-left-color: var(--strava); }
+  .sent-item .txt { flex: 1; color: var(--text); }
+  .sent-item .state { font-size: 0.72rem; white-space: nowrap; color: var(--dim); }
+  .sent-item.delivered .state { color: var(--win); }
+  .sent-item.queued .state { color: var(--gold); }
+  .sent-item.gone .state { color: var(--strava); }
   .subtitle { color: var(--dim); font-size: 0.85rem; margin: 0.3rem 0 0.75rem 0; }
   .footer { margin-top: 1rem; color: var(--dim); font-size: 0.75rem; text-align: center; line-height: 1.5; }
 </style>
@@ -151,9 +169,11 @@
     <div class="charcount"><span id="count">0</span> / 180</div>
     <button id="send">Send message</button>
     <div id="msg-status"></div>
+    <div id="sent-list"><h3>Your messages</h3><div id="sent-items"></div></div>
     <p class="footer">
       Messages play as text-to-speech during the run.<br>
-      Keep them short and encouraging. Delivered in order.
+      Keep them short and encouraging. Delivered in order.<br>
+      "Waiting" means it's queued — it plays as soon as Nick is running.
     </p>
   </div>
 </div>
@@ -163,6 +183,7 @@ const API = "https://7yp3yeisvqkcqg4bis4nhkmtdu0rmwnr.lambda-url.ap-southeast-2.
 const $ = (id) => document.getElementById(id);
 const sender = $('sender'), message = $('message'), count = $('count'), send = $('send'), status = $('msg-status');
 const trackerContent = $('tracker-content'), livestatus = $('livestatus');
+const sentList = $('sent-list'), sentItems = $('sent-items');
 
 sender.value = localStorage.getItem('sender') || '';
 sender.addEventListener('input', () => localStorage.setItem('sender', sender.value));
@@ -202,6 +223,64 @@ async function pollSession() {
 pollSession();
 setInterval(pollSession, 15000);
 
+// Sent messages we're still tracking. Survives a page reload so a parent who
+// refreshes mid-race doesn't lose sight of whether their message landed.
+let sent = [];
+try { sent = JSON.parse(sessionStorage.getItem('sent') || '[]'); } catch (e) { sent = []; }
+
+function saveSent() {
+  try { sessionStorage.setItem('sent', JSON.stringify(sent.slice(-25))); } catch (e) {}
+}
+
+function timeStr(ms) {
+  return new Date(ms).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+}
+
+function renderSent() {
+  if (!sent.length) { sentList.style.display = 'none'; return; }
+  sentList.style.display = 'block';
+  sentItems.innerHTML = sent.slice().reverse().map(m => {
+    let label, cls;
+    if (m.state === 'delivered') {
+      cls = 'delivered';
+      label = m.delivered_ms ? `✓ Heard it ${timeStr(m.delivered_ms)}` : '✓ Heard it';
+    } else if (m.state === 'gone') {
+      cls = 'gone';
+      label = 'Not delivered';
+    } else {
+      cls = 'queued';
+      label = currentSessionUrl ? '◷ Waiting to play' : '◷ Waiting — not running yet';
+    }
+    const safe = m.text.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+    return `<div class="sent-item ${cls}"><span class="txt">${safe}</span><span class="state">${label}</span></div>`;
+  }).join('');
+}
+
+// Ask the API what actually happened to each message, rather than assuming a
+// 200 on submit means Nick heard it — the write and the delivery are different events.
+async function pollStatuses() {
+  const pending = sent.filter(m => m.state === 'queued').map(m => m.id);
+  if (!pending.length) return;
+  try {
+    const r = await fetch(API + '?ids=' + encodeURIComponent(pending.join(',')));
+    const data = await r.json();
+    const st = data.statuses || {};
+    let changed = false;
+    sent.forEach(m => {
+      const s2 = st[m.id];
+      if (s2 && s2.state !== m.state) {
+        m.state = s2.state;
+        m.delivered_ms = s2.delivered_ms || null;
+        changed = true;
+      }
+    });
+    if (changed) { saveSent(); renderSent(); }
+  } catch (e) { /* transient — next poll retries */ }
+}
+
+renderSent();
+setInterval(pollStatuses, 10000);
+
 send.addEventListener('click', async () => {
   const s = sender.value.trim(), m = message.value.trim();
   if (!s || !m) {
@@ -220,8 +299,17 @@ send.addEventListener('click', async () => {
     });
     const data = await r.json();
     if (r.ok) {
-      status.className = 'ok';
-      status.textContent = '✓ Sent! Nick will hear it soon.';
+      // Honest wording: queued is not the same as heard.
+      status.className = data.session_active ? 'ok' : 'warn';
+      status.textContent = data.session_active
+        ? 'Queued — you\'ll see a tick here when Nick hears it.'
+        : "Queued. Nick isn't running yet — it'll play when he starts.";
+      if (data.id) {
+        sent.push({id: data.id, text: m, state: 'queued', delivered_ms: null});
+        saveSent();
+        renderSent();
+        pollStatuses();
+      }
       message.value = '';
       count.textContent = '0';
     } else {
