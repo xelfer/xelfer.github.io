@@ -63,7 +63,12 @@
   .card h2 { margin: 0 0 0.75rem 0; font-size: 1.1rem; color: var(--gold); }
 
   .tracker { padding: 0.5rem; }
-  .tracker iframe { width: 100%; height: 70vh; min-height: 500px; border: none; border-radius: 8px; }
+  /* Garmin's LiveTrack bottom sheet ("Send a Message") is inside a cross-origin
+     iframe, so it can't be styled away. Instead: oversize the iframe inside a
+     fixed-height clipping wrapper so the sheet falls below the visible area.
+     Stops family hitting Garmin's message button, which never reaches Nick. */
+  .tracker .framewrap { position: relative; height: 70vh; min-height: 500px; overflow: hidden; border-radius: 8px; }
+  .tracker .framewrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% + 175px); border: none; }
   .tracker .fallback {
     padding: 3rem 1rem;
     text-align: center;
@@ -175,7 +180,7 @@ async function pollSession() {
       livestatus.textContent = `LIVE · ${started}min in · target ${data.target_km}km`;
       if (data.livetrack_url !== currentSessionUrl) {
         currentSessionUrl = data.livetrack_url;
-        trackerContent.className = '';
+        trackerContent.className = 'framewrap';
         trackerContent.innerHTML = `<iframe src="${data.livetrack_url}" allowfullscreen></iframe>`;
       }
     } else {
