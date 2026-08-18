@@ -184,9 +184,9 @@ async function pollSession() {
       if (currentSessionUrl !== null) {
         currentSessionUrl = null;
         trackerContent.className = 'fallback';
-        trackerContent.innerHTML = 'Nick isn\\'t running right now. This page will update when he starts.';
+        trackerContent.innerHTML = "Nick isn't running right now. This page will update when he starts.";
       } else if (trackerContent.innerHTML.includes('Checking')) {
-        trackerContent.innerHTML = 'Nick isn\\'t running right now. This page will update when he starts.';
+        trackerContent.innerHTML = "Nick isn't running right now. This page will update when he starts.";
       }
     }
   } catch (e) {
