@@ -49,9 +49,11 @@
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+  /* Deliberately single-column at every width. The old 2fr/1fr grid put "Send Nick
+     a message" BESIDE the tracker on desktop, so the desktop and mobile orders
+     disagreed. One column keeps it: tracking -> message -> coach log, everywhere. */
   @media (min-width: 900px) {
-    .container { grid-template-columns: 2fr 1fr; }
-    .tracker { grid-row: span 2; }
+    .container { max-width: 780px; }
   }
 
   .card {
@@ -191,21 +193,19 @@
     <button id="send">Send message</button>
     <div id="msg-status"></div>
     <div id="sent-list"><h3>Your messages</h3><div id="sent-items"></div></div>
+    <p class="footer">
+      Messages play as text-to-speech during the run.<br>
+      Keep them short and encouraging. Delivered in order.<br>
+      "Waiting" means it's queued — it plays as soon as Nick is running.
+    </p>
   </div>
-</div>
 
-<div class="wrap">
   <div class="card">
     <h2>Coach log</h2>
     <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played — coach cues and your messages. Past runs stay here.</p>
     <select id="run-picker" aria-label="Choose a run"></select>
     <div id="evt-tabs" role="tablist"></div>
     <div id="events"><span class="hint">Loading…</span></div>
-    <p class="footer">
-      Messages play as text-to-speech during the run.<br>
-      Keep them short and encouraging. Delivered in order.<br>
-      "Waiting" means it's queued — it plays as soon as Nick is running.
-    </p>
   </div>
 </div>
 
