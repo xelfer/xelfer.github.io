@@ -68,6 +68,13 @@
   .evt-text { flex: 1 1 12rem; }
   .evt-meta { opacity: 0.5; font-size: 0.8rem; flex: 0 0 auto; }
   .evt-msg .evt-text { color: var(--gold); }
+  #evt-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  #evt-tabs button { flex: 0 0 auto; padding: 0.35rem 0.7rem; border-radius: 999px; font: inherit;
+                     font-size: 0.85rem; cursor: pointer; background: #111; color: inherit;
+                     border: 1px solid rgba(255,255,255,0.15); }
+  #evt-tabs button[aria-selected="true"] { background: var(--gold); color: #111; border-color: var(--gold); font-weight: 600; }
+  #evt-tabs .cnt { opacity: 0.55; margin-left: 0.3rem; }
+  #evt-tabs button[aria-selected="true"] .cnt { opacity: 0.75; }
   #run-picker { display: none; width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;
                 background: #111; color: inherit; border: 1px solid rgba(255,255,255,0.15);
                 border-radius: 6px; font: inherit; }
@@ -188,6 +195,7 @@
     <h2>Coach log</h2>
     <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played — coach cues and your messages. Past runs stay here.</p>
     <select id="run-picker" aria-label="Choose a run"></select>
+    <div id="evt-tabs" role="tablist"></div>
     <div id="events"><span class="hint">Loading…</span></div>
     <p class="footer">
       Messages play as text-to-speech during the run.<br>
@@ -210,9 +218,22 @@ message.addEventListener('input', () => count.textContent = message.value.length
 
 let currentSessionUrl = null;
 
-// Coach event log — timestamped history of every cue delivered, grouped by run.
-const eventsBox = $('events'), runPicker = $('run-picker');
-let allEvents = [], chosenRun = null;
+// Coach event log — timestamped history of every cue, grouped by run and by type.
+const eventsBox = $('events'), runPicker = $('run-picker'), evtTabs = $('evt-tabs');
+let allEvents = [], chosenRun = null, lastRendered = '';
+
+// Which rule ids belong to which tab. Anything unmatched falls into "Coach", so a
+// new rule id can never silently vanish from the log.
+const TABS = [
+  {key: 'all',      label: 'All',        match: () => true},
+  {key: 'messages', label: 'Messages',   match: (r) => r === 'family'},
+  {key: 'form',     label: 'Pace & HR',  match: (r) => ['pace_fast', 'hr_ceiling', 'cadence'].indexOf(r) !== -1},
+  {key: 'fuel',     label: 'Fuel',       match: (r) => ['fuel', 'waypoints'].indexOf(r) !== -1},
+  {key: 'progress', label: 'Progress',   match: (r) => ['km_milestone', 'time_check', 'halfway'].indexOf(r) !== -1},
+  {key: 'coach',    label: 'Coach',      match: (r) => ['supportive', 'bedrock'].indexOf(r) !== -1},
+];
+let chosenTab = localStorage.getItem('evtTab') || 'all';
+
 function fmtTime(ms) {
   return new Date(ms).toLocaleTimeString('en-AU', {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
 }
@@ -221,31 +242,53 @@ function fmtRun(ms) {
   return new Date(ms).toLocaleString('en-AU', {weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
 }
 const esc = (t) => (t || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-function renderRuns() {
-  // Group by session. Events logged before session grouping existed carry
-  // session 0 and fall into a single "Earlier cues" bucket rather than vanishing.
+const tabFor = (key) => TABS.filter(t => t.key === key)[0] || TABS[0];
+
+function render() {
   const runs = [...new Set(allEvents.map(e => e.session || 0))].sort((a, b) => b - a);
   // Avoid ?? — keeps this parseable by older browsers (and by our syntax check).
   if (chosenRun === null || runs.indexOf(chosenRun) === -1) chosenRun = runs.length ? runs[0] : null;
   runPicker.style.display = runs.length > 1 ? 'block' : 'none';
   runPicker.innerHTML = runs.map(r =>
     '<option value="' + r + '"' + (r === chosenRun ? ' selected' : '') + '>' + fmtRun(r) + '</option>').join('');
-  const ev = allEvents.filter(e => (e.session || 0) === chosenRun);
-  if (!ev.length) { eventsBox.innerHTML = '<span class="hint">No cues yet.</span>'; return; }
-  eventsBox.innerHTML = ev.slice().reverse().map(e => {
-    const meta = [e.km ? e.km + ' km' : null, e.hr ? e.hr + ' bpm' : null].filter(Boolean).join(' · ');
-    const isMsg = e.rule === 'family';
-    return '<div class="evt' + (isMsg ? ' evt-msg' : '') + '"><span class="evt-time">' + fmtTime(e.ts) + '</span>' +
-           '<span class="evt-text">' + esc(e.text) + '</span>' +
-           (meta ? '<span class="evt-meta">' + meta + '</span>' : '') + '</div>';
+
+  const inRun = allEvents.filter(e => (e.session || 0) === chosenRun);
+  evtTabs.innerHTML = TABS.map(t => {
+    const n = inRun.filter(e => t.match(e.rule)).length;
+    if (!n && t.key !== 'all') return '';   // hide tabs with nothing in them
+    return '<button role="tab" data-tab="' + t.key + '" aria-selected="' + (t.key === chosenTab) + '">' +
+           t.label + '<span class="cnt">' + n + '</span></button>';
   }).join('');
+
+  const ev = inRun.filter(e => tabFor(chosenTab).match(e.rule));
+  const html = !ev.length
+    ? '<span class="hint">Nothing here yet.</span>'
+    : ev.slice().reverse().map(e => {
+        const meta = [e.km ? e.km + ' km' : null, e.hr ? e.hr + ' bpm' : null].filter(Boolean).join(' · ');
+        return '<div class="evt' + (e.rule === 'family' ? ' evt-msg' : '') + '">' +
+               '<span class="evt-time">' + fmtTime(e.ts) + '</span>' +
+               '<span class="evt-text">' + esc(e.text) + '</span>' +
+               (meta ? '<span class="evt-meta">' + meta + '</span>' : '') + '</div>';
+      }).join('');
+  // Only touch the DOM when something actually changed — otherwise a 20s poll
+  // would yank the page back to the top while you're reading it mid-run.
+  if (html !== lastRendered) { eventsBox.innerHTML = html; lastRendered = html; }
 }
-runPicker.addEventListener('change', () => { chosenRun = Number(runPicker.value); renderRuns(); });
+
+evtTabs.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  chosenTab = btn.dataset.tab;
+  localStorage.setItem('evtTab', chosenTab);
+  render();
+});
+runPicker.addEventListener('change', () => { chosenRun = Number(runPicker.value); render(); });
+
 async function pollEvents() {
   try {
     const r = await fetch(API + '?events=1');
     allEvents = (await r.json()).events || [];
-    renderRuns();
+    render();
   } catch (e) {
     eventsBox.innerHTML = '<span class="hint">Log unavailable.</span>';
   }
