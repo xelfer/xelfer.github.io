@@ -83,6 +83,9 @@
   #evt-tabs button[aria-selected="true"] .cnt { opacity: 0.75; }
   .run-label { display: block; font-size: 0.75rem; text-transform: uppercase;
                letter-spacing: 0.05em; opacity: 0.55; margin-bottom: 0.25rem; }
+  #strava-link { display: none; font-size: 0.8rem; color: var(--gold); text-decoration: none;
+                 margin: -0.4rem 0 0.75rem; }
+  #strava-link:hover { text-decoration: underline; }
   #run-picker { width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;
                 background: #111; color: inherit; border: 1px solid rgba(255,255,255,0.15);
                 border-radius: 6px; font: inherit; }
@@ -207,6 +210,7 @@
     <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played — coach cues and your messages. Past runs stay here.</p>
     <label class="run-label" for="run-picker">Run</label>
     <select id="run-picker"></select>
+    <a id="strava-link" href="#" target="_blank" rel="noopener">View on Strava →</a>
     <div id="evt-tabs" role="tablist"></div>
     <div id="events"><span class="hint">Loading…</span></div>
   </div>
@@ -227,7 +231,7 @@ let currentSessionUrl = null;
 
 // Coach event log — timestamped history of every cue, grouped by run and by type.
 const eventsBox = $('events'), runPicker = $('run-picker'), evtTabs = $('evt-tabs');
-let allEvents = [], chosenRun = null, lastRendered = '';
+let allEvents = [], runMeta = {}, chosenRun = null, lastRendered = '';
 
 // Which rule ids belong to which tab. Anything unmatched falls into "Coach", so a
 // new rule id can never silently vanish from the log.
@@ -246,7 +250,12 @@ function fmtTime(ms) {
 }
 function fmtRun(ms) {
   if (!ms) return 'Earlier cues';
-  return new Date(ms).toLocaleString('en-AU', {weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+  const when = new Date(ms).toLocaleString('en-AU', {weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+  // Prefer the Strava title — it's what Nick actually calls the run. Falls back to
+  // the date when a run hasn't been labelled yet (Strava sync lags a few minutes).
+  const m = runMeta[String(ms)];
+  if (!m || !m.name) return when;
+  return m.distance_km ? m.name + ' — ' + m.distance_km + ' km' : m.name;
 }
 const esc = (t) => (t || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
 const tabFor = (key) => TABS.filter(t => t.key === key)[0] || TABS[0];
@@ -258,6 +267,15 @@ function render() {
   // Always visible, even with one run — it's how you discover past runs exist.
   runPicker.innerHTML = runs.map(r =>
     '<option value="' + r + '"' + (r === chosenRun ? ' selected' : '') + '>' + fmtRun(r) + '</option>').join('');
+
+  const meta = runMeta[String(chosenRun)];
+  const link = $('strava-link');
+  if (meta && meta.strava_id) {
+    link.href = 'https://www.strava.com/activities/' + meta.strava_id;
+    link.style.display = 'inline-block';
+  } else {
+    link.style.display = 'none';
+  }
 
   const inRun = allEvents.filter(e => (e.session || 0) === chosenRun);
   evtTabs.innerHTML = TABS.map(t => {
@@ -293,7 +311,9 @@ runPicker.addEventListener('change', () => { chosenRun = Number(runPicker.value)
 async function pollEvents() {
   try {
     const r = await fetch(API + '?events=1');
-    allEvents = (await r.json()).events || [];
+    const data = await r.json();
+    allEvents = data.events || [];
+    runMeta = data.runs || {};
     render();
   } catch (e) {
     eventsBox.innerHTML = '<span class="hint">Log unavailable.</span>';
