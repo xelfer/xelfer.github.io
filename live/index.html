@@ -67,6 +67,10 @@
   .evt-time { font-variant-numeric: tabular-nums; opacity: 0.6; font-size: 0.85rem; flex: 0 0 auto; }
   .evt-text { flex: 1 1 12rem; }
   .evt-meta { opacity: 0.5; font-size: 0.8rem; flex: 0 0 auto; }
+  .evt-msg .evt-text { color: var(--gold); }
+  #run-picker { display: none; width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;
+                background: #111; color: inherit; border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 6px; font: inherit; }
 
   .tracker { padding: 0.5rem; }
   /* Garmin's LiveTrack bottom sheet ("Send a Message") is inside a cross-origin
@@ -182,7 +186,8 @@
 <div class="wrap">
   <div class="card">
     <h2>Coach log</h2>
-    <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played. Stays available after the run.</p>
+    <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played — coach cues and your messages. Past runs stay here.</p>
+    <select id="run-picker" aria-label="Choose a run"></select>
     <div id="events"><span class="hint">Loading…</span></div>
     <p class="footer">
       Messages play as text-to-speech during the run.<br>
@@ -205,24 +210,42 @@ message.addEventListener('input', () => count.textContent = message.value.length
 
 let currentSessionUrl = null;
 
-// Coach event log — timestamped history of every cue delivered.
-const eventsBox = $('events');
+// Coach event log — timestamped history of every cue delivered, grouped by run.
+const eventsBox = $('events'), runPicker = $('run-picker');
+let allEvents = [], chosenRun = null;
 function fmtTime(ms) {
-  const d = new Date(ms);
-  return d.toLocaleTimeString('en-AU', {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+  return new Date(ms).toLocaleTimeString('en-AU', {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
 }
+function fmtRun(ms) {
+  if (!ms) return 'Earlier cues';
+  return new Date(ms).toLocaleString('en-AU', {weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+}
+const esc = (t) => (t || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+function renderRuns() {
+  // Group by session. Events logged before session grouping existed carry
+  // session 0 and fall into a single "Earlier cues" bucket rather than vanishing.
+  const runs = [...new Set(allEvents.map(e => e.session || 0))].sort((a, b) => b - a);
+  // Avoid ?? — keeps this parseable by older browsers (and by our syntax check).
+  if (chosenRun === null || runs.indexOf(chosenRun) === -1) chosenRun = runs.length ? runs[0] : null;
+  runPicker.style.display = runs.length > 1 ? 'block' : 'none';
+  runPicker.innerHTML = runs.map(r =>
+    '<option value="' + r + '"' + (r === chosenRun ? ' selected' : '') + '>' + fmtRun(r) + '</option>').join('');
+  const ev = allEvents.filter(e => (e.session || 0) === chosenRun);
+  if (!ev.length) { eventsBox.innerHTML = '<span class="hint">No cues yet.</span>'; return; }
+  eventsBox.innerHTML = ev.slice().reverse().map(e => {
+    const meta = [e.km ? e.km + ' km' : null, e.hr ? e.hr + ' bpm' : null].filter(Boolean).join(' · ');
+    const isMsg = e.rule === 'family';
+    return '<div class="evt' + (isMsg ? ' evt-msg' : '') + '"><span class="evt-time">' + fmtTime(e.ts) + '</span>' +
+           '<span class="evt-text">' + esc(e.text) + '</span>' +
+           (meta ? '<span class="evt-meta">' + meta + '</span>' : '') + '</div>';
+  }).join('');
+}
+runPicker.addEventListener('change', () => { chosenRun = Number(runPicker.value); renderRuns(); });
 async function pollEvents() {
   try {
     const r = await fetch(API + '?events=1');
-    const data = await r.json();
-    const ev = data.events || [];
-    if (!ev.length) { eventsBox.innerHTML = '<span class="hint">No cues yet.</span>'; return; }
-    eventsBox.innerHTML = ev.slice().reverse().map(e => {
-      const meta = [e.km ? e.km + ' km' : null, e.hr ? e.hr + ' bpm' : null].filter(Boolean).join(' · ');
-      return '<div class="evt"><span class="evt-time">' + fmtTime(e.ts) + '</span>' +
-             '<span class="evt-text">' + (e.text || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) + '</span>' +
-             (meta ? '<span class="evt-meta">' + meta + '</span>' : '') + '</div>';
-    }).join('');
+    allEvents = (await r.json()).events || [];
+    renderRuns();
   } catch (e) {
     eventsBox.innerHTML = '<span class="hint">Log unavailable.</span>';
   }
