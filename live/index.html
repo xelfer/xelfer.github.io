@@ -81,7 +81,9 @@
   #evt-tabs button[aria-selected="true"] { background: var(--gold); color: #111; border-color: var(--gold); font-weight: 600; }
   #evt-tabs .cnt { opacity: 0.55; margin-left: 0.25rem; }
   #evt-tabs button[aria-selected="true"] .cnt { opacity: 0.75; }
-  #run-picker { display: none; width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;
+  .run-label { display: block; font-size: 0.75rem; text-transform: uppercase;
+               letter-spacing: 0.05em; opacity: 0.55; margin-bottom: 0.25rem; }
+  #run-picker { width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;
                 background: #111; color: inherit; border: 1px solid rgba(255,255,255,0.15);
                 border-radius: 6px; font: inherit; }
 
@@ -203,7 +205,8 @@
   <div class="card">
     <h2>Coach log</h2>
     <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played — coach cues and your messages. Past runs stay here.</p>
-    <select id="run-picker" aria-label="Choose a run"></select>
+    <label class="run-label" for="run-picker">Run</label>
+    <select id="run-picker"></select>
     <div id="evt-tabs" role="tablist"></div>
     <div id="events"><span class="hint">Loading…</span></div>
   </div>
@@ -252,7 +255,7 @@ function render() {
   const runs = [...new Set(allEvents.map(e => e.session || 0))].sort((a, b) => b - a);
   // Avoid ?? — keeps this parseable by older browsers (and by our syntax check).
   if (chosenRun === null || runs.indexOf(chosenRun) === -1) chosenRun = runs.length ? runs[0] : null;
-  runPicker.style.display = runs.length > 1 ? 'block' : 'none';
+  // Always visible, even with one run — it's how you discover past runs exist.
   runPicker.innerHTML = runs.map(r =>
     '<option value="' + r + '"' + (r === chosenRun ? ' selected' : '') + '>' + fmtRun(r) + '</option>').join('');
 
