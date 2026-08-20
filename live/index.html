@@ -68,8 +68,11 @@
   .evt-text { flex: 1 1 12rem; }
   .evt-meta { opacity: 0.5; font-size: 0.8rem; flex: 0 0 auto; }
   .evt-msg .evt-text { color: var(--gold); }
-  #evt-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-  #evt-tabs button { flex: 0 0 auto; padding: 0.35rem 0.7rem; border-radius: 999px; font: inherit;
+  /* One row, scrolls sideways if it overflows — never stacks one tab per line. */
+  #evt-tabs { display: flex; gap: 0.35rem; flex-wrap: nowrap; margin-bottom: 0.75rem;
+              overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  #evt-tabs::-webkit-scrollbar { display: none; }
+  #evt-tabs button { flex: 0 0 auto; white-space: nowrap; padding: 0.35rem 0.7rem; border-radius: 999px; font: inherit;
                      font-size: 0.85rem; cursor: pointer; background: #111; color: inherit;
                      border: 1px solid rgba(255,255,255,0.15); }
   #evt-tabs button[aria-selected="true"] { background: var(--gold); color: #111; border-color: var(--gold); font-weight: 600; }
@@ -232,7 +235,7 @@ const TABS = [
   {key: 'progress', label: 'Progress',   match: (r) => ['km_milestone', 'time_check', 'halfway'].indexOf(r) !== -1},
   {key: 'coach',    label: 'Coach',      match: (r) => ['supportive', 'bedrock'].indexOf(r) !== -1},
 ];
-let chosenTab = localStorage.getItem('evtTab') || 'all';
+let chosenTab = localStorage.getItem('evtTab') || 'messages';   // family messages are what he opens the page for
 
 function fmtTime(ms) {
   return new Date(ms).toLocaleTimeString('en-AU', {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
@@ -255,7 +258,7 @@ function render() {
   const inRun = allEvents.filter(e => (e.session || 0) === chosenRun);
   evtTabs.innerHTML = TABS.map(t => {
     const n = inRun.filter(e => t.match(e.rule)).length;
-    if (!n && t.key !== 'all') return '';   // hide tabs with nothing in them
+    if (!n && t.key !== 'all' && t.key !== 'messages') return '';   // hide empty tabs, but never the two defaults
     return '<button role="tab" data-tab="' + t.key + '" aria-selected="' + (t.key === chosenTab) + '">' +
            t.label + '<span class="cnt">' + n + '</span></button>';
   }).join('');
