@@ -277,15 +277,23 @@
             border-radius: 12px;
             padding: 1.25rem;
         }
+        /* Label left, prose left-aligned beside it. space-between pushed the text
+           to the right edge, so every row started at a different x and the block
+           read as ragged nonsense. */
         .race-strategy-row {
             display: flex;
-            justify-content: space-between;
+            gap: 1rem;
             padding: 0.4rem 0;
             border-bottom: 1px solid #21262d;
         }
         .race-strategy-row:last-child { border-bottom: none; }
-        .race-strategy-row .phase { color: #d2a8ff; font-weight: 600; min-width: 100px; }
-        .race-strategy-row .plan { color: #e1e4e8; }
+        .race-strategy-row .phase { color: #d2a8ff; font-weight: 600;
+                                     flex: 0 0 8.5rem; text-align: left; }
+        .race-strategy-row .plan { color: #e1e4e8; flex: 1 1 auto; text-align: left; }
+        @media (max-width: 640px) {
+            .race-strategy-row { flex-direction: column; gap: 0.15rem; }
+            .race-strategy-row .phase { flex: none; }
+        }
         .principles-list {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1134,6 +1142,65 @@
                 </div>
             </details>
             <div class="race-strategy" style="margin-top:1rem">
+                <h3 style="color:#d2a8ff; margin-bottom:0.75rem">Race Morning</h3>
+                <div class="race-strategy-row">
+                    <span class="phase">6:55 am</span>
+                    <span class="plan">Arrival — assembly area opens (you will NOT be let in earlier)</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">7:35 am</span>
+                    <span class="plan">Enter start chute</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">8:07 am</span>
+                    <span class="plan"><strong>START</strong></span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">5:00</span>
+                    <span class="plan">Wake. <strong>Contacts in before leaving</strong> — they took 15 min at home once</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">5:10</span>
+                    <span class="plan"><strong>Breakfast: banana on toast + honey + coffee.</strong> ~3h before the gun. Proven Aug 20</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">5:45</span>
+                    <span class="plan">Leave Concord (lift) — the one genuinely fixed time</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">~6:10</span>
+                    <span class="plan">Dropped at <strong>Chatswood</strong>. Driver approaches <strong>from the west via Epping Rd / Lane Cove Rd</strong>, NOT toward North Sydney</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">~6:20</span>
+                    <span class="plan"><strong>Metro M1 southbound → Crows Nest</strong> (next stop, ~5 min; every 4 min until 8am)</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">6:30</span>
+                    <span class="plan">Crows Nest, <strong>Clarke St exit</strong> → Clarke St → Willoughby Rd → Burlington St → West St → Falcon St (~1km, 15 min)</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">6:55</span>
+                    <span class="plan"><strong>St Leonards Park. TOILET QUEUE FIRST</strong>, before anything else — breakfast clears ~90 min after eating, i.e. mid-transit</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">7:15</span>
+                    <span class="plan"><strong>Top-up</strong> — banana / bar / sports drink</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">7:35</span>
+                    <span class="plan">Chute. 32 min standing — <strong>throwaway layer stays on until now</strong></span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">7:50</span>
+                    <span class="plan"><strong>Gel</strong> — 10-15 min before the gun. Aug 20 proved skipping this leaves him hollow</span>
+                </div>
+                <div class="race-strategy-row">
+                    <span class="phase">8:07</span>
+                    <span class="plan"><strong>START</strong></span>
+                </div>
+            </div>
+            <div class="race-strategy" style="margin-top:1rem">
                 <h3 style="color:#d2a8ff; margin-bottom:0.75rem">Race Day Strategy</h3>
                 <div class="race-strategy-row">
                     <span class="phase">Start-10km</span>
@@ -1157,7 +1224,7 @@
                 </div>
                 <div class="race-strategy-row">
                     <span class="phase">⚠️ GOAL-TIME POSITION (set Aug 19, after Nick asked about 6:40/km, sub-4, then 4:30).</span>
-                    <span class="plan">**Sub-4 = 5:41/km, faster</span>
+                    <span class="plan">Sub-4 = 5:41/km, faster</span>
                 </div>
                 <div class="race-strategy-row">
                     <span class="phase">Pacers at the expo — worth talking to</span>
@@ -1445,7 +1512,7 @@
         </div>
 
         <div class="updated">
-            Last updated: August 20, 2026 at 11:34 AEST<br>
+            Last updated: August 20, 2026 at 11:39 AEST<br>
             Auto-generated from Garmin Connect &amp; intervals.icu
         </div>
     </div>
