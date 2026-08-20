@@ -61,6 +61,12 @@
     padding: 1.25rem;
   }
   .card h2 { margin: 0 0 0.75rem 0; font-size: 1.1rem; color: var(--gold); }
+  .evt { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.45rem 0;
+         border-bottom: 1px solid rgba(255,255,255,0.07); flex-wrap: wrap; }
+  .evt:last-child { border-bottom: 0; }
+  .evt-time { font-variant-numeric: tabular-nums; opacity: 0.6; font-size: 0.85rem; flex: 0 0 auto; }
+  .evt-text { flex: 1 1 12rem; }
+  .evt-meta { opacity: 0.5; font-size: 0.8rem; flex: 0 0 auto; }
 
   .tracker { padding: 0.5rem; }
   /* Garmin's LiveTrack bottom sheet ("Send a Message") is inside a cross-origin
@@ -170,6 +176,14 @@
     <button id="send">Send message</button>
     <div id="msg-status"></div>
     <div id="sent-list"><h3>Your messages</h3><div id="sent-items"></div></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Coach log</h2>
+    <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played. Stays available after the run.</p>
+    <div id="events"><span class="hint">Loading…</span></div>
     <p class="footer">
       Messages play as text-to-speech during the run.<br>
       Keep them short and encouraging. Delivered in order.<br>
@@ -190,6 +204,31 @@ sender.addEventListener('input', () => localStorage.setItem('sender', sender.val
 message.addEventListener('input', () => count.textContent = message.value.length);
 
 let currentSessionUrl = null;
+
+// Coach event log — timestamped history of every cue delivered.
+const eventsBox = $('events');
+function fmtTime(ms) {
+  const d = new Date(ms);
+  return d.toLocaleTimeString('en-AU', {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+}
+async function pollEvents() {
+  try {
+    const r = await fetch(API + '?events=1');
+    const data = await r.json();
+    const ev = data.events || [];
+    if (!ev.length) { eventsBox.innerHTML = '<span class="hint">No cues yet.</span>'; return; }
+    eventsBox.innerHTML = ev.slice().reverse().map(e => {
+      const meta = [e.km ? e.km + ' km' : null, e.hr ? e.hr + ' bpm' : null].filter(Boolean).join(' · ');
+      return '<div class="evt"><span class="evt-time">' + fmtTime(e.ts) + '</span>' +
+             '<span class="evt-text">' + (e.text || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) + '</span>' +
+             (meta ? '<span class="evt-meta">' + meta + '</span>' : '') + '</div>';
+    }).join('');
+  } catch (e) {
+    eventsBox.innerHTML = '<span class="hint">Log unavailable.</span>';
+  }
+}
+pollEvents();
+setInterval(pollEvents, 20000);
 
 async function pollSession() {
   try {
