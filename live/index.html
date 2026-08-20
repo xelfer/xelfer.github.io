@@ -68,15 +68,16 @@
   .evt-text { flex: 1 1 12rem; }
   .evt-meta { opacity: 0.5; font-size: 0.8rem; flex: 0 0 auto; }
   .evt-msg .evt-text { color: var(--gold); }
-  /* One row, scrolls sideways if it overflows — never stacks one tab per line. */
-  #evt-tabs { display: flex; gap: 0.35rem; flex-wrap: nowrap; margin-bottom: 0.75rem;
-              overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  #evt-tabs::-webkit-scrollbar { display: none; }
-  #evt-tabs button { flex: 0 0 auto; white-space: nowrap; padding: 0.35rem 0.7rem; border-radius: 999px; font: inherit;
-                     font-size: 0.85rem; cursor: pointer; background: #111; color: inherit;
-                     border: 1px solid rgba(255,255,255,0.15); }
+  /* All six tabs visible on one line — they SHARE the width rather than scrolling.
+     The earlier version used overflow-x, which technically kept them on one row but
+     pushed everything except "All" off the side of a phone screen. */
+  #evt-tabs { display: flex; gap: 0.25rem; flex-wrap: nowrap; margin-bottom: 0.75rem; }
+  #evt-tabs button { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden;
+                     text-overflow: ellipsis; padding: 0.35rem 0.15rem; border-radius: 999px;
+                     font: inherit; font-size: 0.72rem; cursor: pointer; background: #111;
+                     color: inherit; border: 1px solid rgba(255,255,255,0.15); text-align: center; }
   #evt-tabs button[aria-selected="true"] { background: var(--gold); color: #111; border-color: var(--gold); font-weight: 600; }
-  #evt-tabs .cnt { opacity: 0.55; margin-left: 0.3rem; }
+  #evt-tabs .cnt { opacity: 0.55; margin-left: 0.25rem; }
   #evt-tabs button[aria-selected="true"] .cnt { opacity: 0.75; }
   #run-picker { display: none; width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;
                 background: #111; color: inherit; border: 1px solid rgba(255,255,255,0.15);
@@ -229,10 +230,10 @@ let allEvents = [], chosenRun = null, lastRendered = '';
 // new rule id can never silently vanish from the log.
 const TABS = [
   {key: 'all',      label: 'All',        match: () => true},
-  {key: 'messages', label: 'Messages',   match: (r) => r === 'family'},
-  {key: 'form',     label: 'Pace & HR',  match: (r) => ['pace_fast', 'hr_ceiling', 'cadence'].indexOf(r) !== -1},
+  {key: 'messages', label: 'Msgs',       match: (r) => r === 'family'},
+  {key: 'form',     label: 'Pace',       match: (r) => ['pace_fast', 'hr_ceiling', 'cadence'].indexOf(r) !== -1},
   {key: 'fuel',     label: 'Fuel',       match: (r) => ['fuel', 'waypoints'].indexOf(r) !== -1},
-  {key: 'progress', label: 'Progress',   match: (r) => ['km_milestone', 'time_check', 'halfway'].indexOf(r) !== -1},
+  {key: 'progress', label: 'Prog',       match: (r) => ['km_milestone', 'time_check', 'halfway'].indexOf(r) !== -1},
   {key: 'coach',    label: 'Coach',      match: (r) => ['supportive', 'bedrock'].indexOf(r) !== -1},
 ];
 let chosenTab = localStorage.getItem('evtTab') || 'messages';   // family messages are what he opens the page for
@@ -258,7 +259,6 @@ function render() {
   const inRun = allEvents.filter(e => (e.session || 0) === chosenRun);
   evtTabs.innerHTML = TABS.map(t => {
     const n = inRun.filter(e => t.match(e.rule)).length;
-    if (!n && t.key !== 'all' && t.key !== 'messages') return '';   // hide empty tabs, but never the two defaults
     return '<button role="tab" data-tab="' + t.key + '" aria-selected="' + (t.key === chosenTab) + '">' +
            t.label + '<span class="cnt">' + n + '</span></button>';
   }).join('');
