@@ -170,6 +170,25 @@
   .sent-item.gone .state { color: var(--strava); }
   .subtitle { color: var(--dim); font-size: 0.85rem; margin: 0.3rem 0 0.75rem 0; }
   .footer { margin-top: 1rem; color: var(--dim); font-size: 0.75rem; text-align: center; line-height: 1.5; }
+
+  /* Donation bar — always visible, race day and before. */
+  .donate {
+    max-width: 1200px; margin: 0 auto; padding: 0.75rem 1rem 0 1rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+    font-size: 0.9rem;
+  }
+  .donate span { color: var(--dim); }
+  .donate a {
+    color: #0e0e0e; background: var(--gold); text-decoration: none;
+    font-weight: 600; padding: 0.45rem 0.85rem; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .donate a:hover { filter: brightness(1.1); }
+  /* Pre-race holding card. */
+  .prerace { text-align: center; }
+  .prerace h2 { margin-bottom: 0.5rem; }
+  .prerace p { color: var(--dim); margin: 0.4rem 0; line-height: 1.6; }
+  .prerace .when { color: var(--text); font-size: 1.05rem; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -179,15 +198,34 @@
   <span id="livestatus" class="status offline">Not running</span>
 </header>
 
+<div class="donate">
+  <span>Running for the Cancer Council, in memory of Kim's mum.</span>
+  <a href="https://sm26.grassrootz.com/cancercouncilnsw/nick-triantafillou" target="_blank" rel="noopener">Donate →</a>
+</div>
+
 <div class="container">
-  <div class="card tracker">
+  <div class="card prerace" id="prerace" hidden>
+    <h2>Nothing to see here until Sunday</h2>
+    <p class="when">Sunday 30 August, 8:07am</p>
+    <p>That's when Nick starts the Sydney Marathon. This page goes live then —
+       you'll be able to follow him around the course and send a message that
+       gets read out in his headphones while he runs.</p>
+    <p>Come back Sunday morning. Bookmark it now so you don't have to find it again.</p>
+    <p style="margin-top:1rem">
+      <a href="https://sm26.grassrootz.com/cancercouncilnsw/nick-triantafillou"
+         target="_blank" rel="noopener"
+         style="color:#0e0e0e;background:var(--gold);text-decoration:none;font-weight:600;padding:0.6rem 1.1rem;border-radius:999px;display:inline-block">
+        Donate to the Cancer Council →</a>
+    </p>
+  </div>
+  <div class="card tracker" id="card-tracker">
     <h2>Live tracking</h2>
     <div id="tracker-content" class="fallback">
       Checking for active session...
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-message">
     <h2>Send Nick a message</h2>
     <p class="subtitle">He'll hear it in his headphones during the run.</p>
     <label for="sender">Your name</label>
@@ -205,7 +243,7 @@
     </p>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-log">
     <h2>Coach log</h2>
     <p class="hint" style="margin-top:0">Every cue Nick heard, with the time it played — coach cues and your messages. Past runs stay here.</p>
     <label class="run-label" for="run-picker">Run</label>
@@ -222,6 +260,22 @@ const $ = (id) => document.getElementById(id);
 const sender = $('sender'), message = $('message'), count = $('count'), send = $('send'), status = $('msg-status');
 const trackerContent = $('tracker-content'), livestatus = $('livestatus');
 const sentList = $('sent-list'), sentItems = $('sent-items');
+
+// --- Pre-race holding state -------------------------------------------------
+// Before race morning the page would otherwise show the last training run,
+// which is a poor first impression for someone arriving from the fundraiser.
+// Hide the live cards until Sunday and don't poll the API for no reason.
+// Add ?preview=1 to the URL to bypass this and see the real page.
+const RACE_LIVE_FROM = new Date('2026-08-30T00:00:00+10:00').getTime();
+const PREVIEW = new URLSearchParams(location.search).has('preview');
+const PRERACE = Date.now() < RACE_LIVE_FROM && !PREVIEW;
+if (PRERACE) {
+  $('prerace').hidden = false;
+  ['card-tracker', 'card-message', 'card-log'].forEach(id => {
+    const el = $(id); if (el) el.style.display = 'none';
+  });
+  livestatus.textContent = 'Starts Sunday 8:07am';
+}
 
 sender.value = localStorage.getItem('sender') || '';
 sender.addEventListener('input', () => localStorage.setItem('sender', sender.value));
@@ -319,8 +373,7 @@ async function pollEvents() {
     eventsBox.innerHTML = '<span class="hint">Log unavailable.</span>';
   }
 }
-pollEvents();
-setInterval(pollEvents, 20000);
+if (!PRERACE) { pollEvents(); setInterval(pollEvents, 20000); }
 
 async function pollSession() {
   try {
@@ -351,8 +404,7 @@ async function pollSession() {
     livestatus.textContent = 'Connection issue';
   }
 }
-pollSession();
-setInterval(pollSession, 15000);
+if (!PRERACE) { pollSession(); setInterval(pollSession, 15000); }
 
 // Sent messages we're still tracking. Survives a page reload so a parent who
 // refreshes mid-race doesn't lose sight of whether their message landed.
@@ -410,7 +462,7 @@ async function pollStatuses() {
 }
 
 renderSent();
-setInterval(pollStatuses, 10000);
+if (!PRERACE) setInterval(pollStatuses, 10000);
 
 send.addEventListener('click', async () => {
   const s = sender.value.trim(), m = message.value.trim();
