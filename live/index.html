@@ -190,6 +190,25 @@
   .prerace h2 { margin-bottom: 0.5rem; }
   .prerace p { color: var(--dim); margin: 0.4rem 0; line-height: 1.6; }
   .prerace .when { color: var(--text); font-size: 1.05rem; font-weight: 600; }
+
+  /* Garmin started refusing to render livetrack.garmin.com inside an iframe — it
+     serves a "This session is private" padlock instead, even with a valid token.
+     Confirmed Aug 29 2026: the same URL opens fine in a normal tab. So we link
+     out rather than embed, and show live figures here so the page still says
+     something on its own. */
+  .trackbtn {
+    display: block; text-align: center; text-decoration: none;
+    background: var(--strava); color: #fff; font-weight: 700; font-size: 1.05rem;
+    padding: 0.9rem 1rem; border-radius: 12px; margin-bottom: 0.75rem;
+  }
+  .trackbtn:hover { filter: brightness(1.1); }
+  .livestats { display: flex; gap: 0.5rem; }
+  .livestats div {
+    flex: 1 1 0; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.6rem 0.4rem; text-align: center;
+  }
+  .livestats .v { font-size: 1.35rem; font-weight: 700; color: var(--gold); }
+  .livestats .l { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; }
 </style>
 </head>
 <body>
@@ -352,6 +371,16 @@ function render() {
   // Only touch the DOM when something actually changed — otherwise a 20s poll
   // would yank the page back to the top while you're reading it mid-run.
   if (html !== lastRendered) { eventsBox.innerHTML = html; lastRendered = html; }
+
+  // Feed the live tiles from the newest cue that carried figures. Garmin's map is
+  // a link-out now, so these are the only numbers visible without leaving the page.
+  const withData = allEvents.filter(e => e.km || e.hr);
+  const latest = withData.length ? withData[withData.length - 1] : null;
+  if (latest) {
+    const km = document.getElementById('st-km'), hr = document.getElementById('st-hr');
+    if (km && latest.km) km.textContent = Number(latest.km).toFixed(1);
+    if (hr && latest.hr) hr.textContent = Math.round(Number(latest.hr));
+  }
 }
 
 evtTabs.addEventListener('click', (e) => {
@@ -386,9 +415,18 @@ async function pollSession() {
       livestatus.textContent = `LIVE · ${started}min in · target ${data.target_km}km`;
       if (data.livetrack_url !== currentSessionUrl) {
         currentSessionUrl = data.livetrack_url;
-        trackerContent.className = 'framewrap';
-        trackerContent.innerHTML = `<iframe src="${data.livetrack_url}" allowfullscreen></iframe>`;
+        trackerContent.className = '';
+        trackerContent.innerHTML =
+          `<a class="trackbtn" href="${data.livetrack_url}" target="_blank" rel="noopener">`
+          + `Open the live map on Garmin \u2192</a>`
+          + `<div class="livestats">`
+          + `<div><div class="v" id="st-km">\u2013</div><div class="l">km</div></div>`
+          + `<div><div class="v" id="st-hr">\u2013</div><div class="l">bpm</div></div>`
+          + `<div><div class="v" id="st-el">${started}</div><div class="l">min</div></div>`
+          + `</div>`;
       }
+      const el = document.getElementById('st-el');
+      if (el) el.textContent = started;
     } else {
       livestatus.className = 'status offline';
       livestatus.textContent = 'Not running';
