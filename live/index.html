@@ -267,7 +267,7 @@ const sentList = $('sent-list'), sentItems = $('sent-items');
 // which is a poor first impression for someone arriving from the fundraiser.
 // Hide the live cards until Sunday and don't poll the API for no reason.
 // Add ?preview=1 to the URL to bypass this and see the real page.
-const RACE_LIVE_FROM = new Date('2026-08-30T00:00:00+10:00').getTime();
+const RACE_LIVE_FROM = new Date('2026-08-29T00:00:00+10:00').getTime();  // brought forward a day for the Sat 29 shakeout test
 const PREVIEW = new URLSearchParams(location.search).has('preview');
 const PRERACE = Date.now() < RACE_LIVE_FROM && !PREVIEW;
 if (PRERACE) {
