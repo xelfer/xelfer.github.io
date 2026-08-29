@@ -210,9 +210,10 @@
   .livestats .v { font-size: 1.35rem; font-weight: 700; color: var(--gold); }
   .livestats .l { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; }
 
-  #map { height: 300px; border-radius: 12px; margin-bottom: 0.75rem; background: #1a1a1a; }
+  #map { height: 300px; border-radius: 12px; margin-bottom: 0.75rem; background: #2a2a2a; }
   #map[hidden] { display: none; }
-  .leaflet-container { background: #1a1a1a; }
+  .leaflet-container { background: #2a2a2a; }
+  .leaflet-control-attribution { font-size: 0.6rem; }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -431,9 +432,13 @@ async function pollTrack() {
     el.hidden = false;                   // must be visible BEFORE Leaflet measures it
     if (!map) {
       mapEl = el;
-      map = L.map(el, {zoomControl: true, attributionControl: false, maxZoom: 18}).setView(d.points[0], 15);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                  {maxZoom: 19}).addTo(map);
+      // OpenStreetMap's own tiles: no API key, no sign-up, no rate-limit surprise
+      // on race morning. CartoDB's dark basemap started demanding a key (Aug 29),
+      // which is exactly the kind of third-party dependency you don't want between
+      // your family and a map. Attribution is required by OSM's usage policy.
+      map = L.map(el, {zoomControl: true, maxZoom: 18}).setView(d.points[0], 15);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  {maxZoom: 19, attribution: '&copy; OpenStreetMap'}).addTo(map);
       routeLine = L.polyline([], {color: '#fc4c02', weight: 4}).addTo(map);
       hereDot = L.circleMarker(d.points[0], {radius: 7, color: '#fff', weight: 2,
                                              fillColor: '#f9c74f', fillOpacity: 1}).addTo(map);
