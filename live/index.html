@@ -210,9 +210,9 @@
   .livestats .v { font-size: 1.35rem; font-weight: 700; color: var(--gold); }
   .livestats .l { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; }
 
-  #map { height: 300px; border-radius: 12px; margin-bottom: 0.75rem; background: #2a2a2a; }
+  #map { height: 320px; border-radius: 12px; margin-bottom: 0.75rem; background: #d8d8d8; }
   #map[hidden] { display: none; }
-  .leaflet-container { background: #2a2a2a; }
+  .leaflet-container { background: #d8d8d8; }
   .leaflet-control-attribution { font-size: 0.6rem; }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -436,10 +436,15 @@ async function pollTrack() {
       // on race morning. CartoDB's dark basemap started demanding a key (Aug 29),
       // which is exactly the kind of third-party dependency you don't want between
       // your family and a map. Attribution is required by OSM's usage policy.
-      map = L.map(el, {zoomControl: true, maxZoom: 18}).setView(d.points[0], 15);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  {maxZoom: 19, attribution: '&copy; OpenStreetMap'}).addTo(map);
-      routeLine = L.polyline([], {color: '#fc4c02', weight: 4}).addTo(map);
+      // Esri's light grey canvas: no API key, and deliberately minimal so the route
+      // line is the loudest thing on it. maxZoom is 16 for this service — going past
+      // it means requesting tiles that don't exist and the map goes blank, which is
+      // the failure we already chased once. Cap the map, not just the layer.
+      map = L.map(el, {zoomControl: true, maxZoom: 16}).setView(d.points[0], 15);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/'
+                  + 'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+                  {maxZoom: 16, attribution: 'Esri'}).addTo(map);
+      routeLine = L.polyline([], {color: '#fc4c02', weight: 5, opacity: 0.95}).addTo(map);
       hereDot = L.circleMarker(d.points[0], {radius: 7, color: '#fff', weight: 2,
                                              fillColor: '#f9c74f', fillOpacity: 1}).addTo(map);
     }
