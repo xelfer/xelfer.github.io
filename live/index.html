@@ -415,15 +415,24 @@ if (!PRERACE) { pollEvents(); setInterval(pollEvents, 20000); }
 // cookie + CSRF pair the browser can't get cross-origin). If the proxy returns
 // nothing the map stays empty and the "Open on Garmin" button still works.
 const TRACK_API = "https://cs6fnsia74azvfsgrw5litu55a0mbiww.lambda-url.ap-southeast-2.on.aws/";
-let map = null, routeLine = null, hereDot = null, fitted = false;
+let map = null, routeLine = null, hereDot = null, fitted = false, mapEl = null;
 
 async function pollTrack() {
   const el = document.getElementById('map');
   if (!el) return;                       // not running — card shows the fallback text
+  // The tracker card rewrites its innerHTML whenever the session changes, which
+  // leaves any existing Leaflet instance bound to a node that is no longer in the
+  // document — the map vanishes and never returns. Rebuild whenever the element
+  // we drew on isn't the one on screen.
+  if (map && (mapEl !== el || !document.body.contains(mapEl))) {
+    try { map.remove(); } catch (e) {}
+    map = null; routeLine = null; hereDot = null; fitted = false;
+  }
   try {
     const d = await (await fetch(TRACK_API)).json();
     if (!d.points || !d.points.length) return;
     if (!map) {
+      mapEl = el;
       map = L.map(el, {zoomControl: true, attributionControl: false}).setView(d.points[0], 14);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                   {maxZoom: 19}).addTo(map);
@@ -431,6 +440,9 @@ async function pollTrack() {
       hereDot = L.circleMarker(d.points[0], {radius: 7, color: '#fff', weight: 2,
                                              fillColor: '#f9c74f', fillOpacity: 1}).addTo(map);
     }
+    // Leaflet measures the container at creation. If it was still being laid out
+    // the map renders into a zero-height box and shows nothing but background.
+    map.invalidateSize();
     routeLine.setLatLngs(d.points);
     const here = d.last || d.points[d.points.length - 1];
     hereDot.setLatLng(here);
