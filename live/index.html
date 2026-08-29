@@ -211,6 +211,7 @@
   .livestats .l { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; }
 
   #map { height: 300px; border-radius: 12px; margin-bottom: 0.75rem; background: #1a1a1a; }
+  #map[hidden] { display: none; }
   .leaflet-container { background: #1a1a1a; }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -245,6 +246,10 @@
   </div>
   <div class="card tracker" id="card-tracker">
     <h2>Live tracking</h2>
+    <!-- The map lives HERE, not inside #tracker-content, because that element's
+         innerHTML is rewritten whenever the session changes — which orphaned the
+         Leaflet instance on a detached node and the map vanished for good. -->
+    <div id="map" hidden></div>
     <div id="tracker-content" class="fallback">
       Checking for active session...
     </div>
@@ -419,18 +424,11 @@ let map = null, routeLine = null, hereDot = null, fitted = false, mapEl = null;
 
 async function pollTrack() {
   const el = document.getElementById('map');
-  if (!el) return;                       // not running — card shows the fallback text
-  // The tracker card rewrites its innerHTML whenever the session changes, which
-  // leaves any existing Leaflet instance bound to a node that is no longer in the
-  // document — the map vanishes and never returns. Rebuild whenever the element
-  // we drew on isn't the one on screen.
-  if (map && (mapEl !== el || !document.body.contains(mapEl))) {
-    try { map.remove(); } catch (e) {}
-    map = null; routeLine = null; hereDot = null; fitted = false;
-  }
+  if (!el) return;
   try {
     const d = await (await fetch(TRACK_API)).json();
-    if (!d.points || !d.points.length) return;
+    if (!d.points || !d.points.length) { el.hidden = true; return; }
+    el.hidden = false;                   // must be visible BEFORE Leaflet measures it
     if (!map) {
       mapEl = el;
       map = L.map(el, {zoomControl: true, attributionControl: false, maxZoom: 18}).setView(d.points[0], 15);
@@ -470,11 +468,10 @@ async function pollSession() {
       livestatus.textContent = `LIVE · ${started}min in · target ${data.target_km}km`;
       if (data.livetrack_url !== currentSessionUrl) {
         currentSessionUrl = data.livetrack_url;
-        map = null; routeLine = null; hereDot = null; fitted = false;
+        fitted = false;   // new run: refit the view, but keep the map instance
         trackerContent.className = '';
         trackerContent.innerHTML =
-          `<div id="map"></div>`
-          + `<a class="trackbtn" href="${data.livetrack_url}" target="_blank" rel="noopener">`
+          `<a class="trackbtn" href="${data.livetrack_url}" target="_blank" rel="noopener">`
           + `Open the live map on Garmin \u2192</a>`
           + `<div class="livestats">`
           + `<div><div class="v" id="st-km">\u2013</div><div class="l">km</div></div>`
