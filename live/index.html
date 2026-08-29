@@ -433,7 +433,7 @@ async function pollTrack() {
     if (!d.points || !d.points.length) return;
     if (!map) {
       mapEl = el;
-      map = L.map(el, {zoomControl: true, attributionControl: false}).setView(d.points[0], 14);
+      map = L.map(el, {zoomControl: true, attributionControl: false, maxZoom: 18}).setView(d.points[0], 15);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                   {maxZoom: 19}).addTo(map);
       routeLine = L.polyline([], {color: '#fc4c02', weight: 4}).addTo(map);
@@ -446,7 +446,13 @@ async function pollTrack() {
     routeLine.setLatLngs(d.points);
     const here = d.last || d.points[d.points.length - 1];
     hereDot.setLatLng(here);
-    if (!fitted) { map.fitBounds(routeLine.getBounds().pad(0.15)); fitted = true; }
+    // maxZoom matters: standing still gives ~10m of bounds, and fitBounds would
+    // otherwise zoom past the tile layer's limit, where no tiles exist and the map
+    // goes blank. That looked exactly like "the map appeared then disappeared".
+    if (!fitted) {
+      map.fitBounds(routeLine.getBounds().pad(0.15), {maxZoom: 16});
+      fitted = true;
+    }
     else { map.panTo(here, {animate: true}); }
     const km = document.getElementById('st-km'), hr = document.getElementById('st-hr');
     if (km && d.km) km.textContent = Number(d.km).toFixed(1);
